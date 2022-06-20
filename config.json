@@ -1,0 +1,10 @@
+{
+    "token":"",
+    "mysql":{
+        "host":"",
+        "port":"",
+        "user":"",
+        "password":"",
+        "database":""
+    }
+}

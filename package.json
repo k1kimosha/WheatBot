@@ -1,0 +1,31 @@
+{
+  "name": "nexus_roleplay_bot",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "keywords": [
+    "Nexus",
+    "RolePlay",
+    "Bot",
+    "Discord",
+    "DiscordJS"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k1kimosha/NexusRolePlayBot.git",
+    "directory": "/"
+  },
+  "author": "k1kimosha",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.8.0",
+    "mysql2": "^2.3.3"
+  },
+  "bugs": {
+    "url": "https://github.com/k1kimosha/NexusRolePlayBot/issues"
+  },
+  "homepage": "https://github.com/k1kimosha/NexusRolePlayBot#readme",
+  "description": ""
+}
