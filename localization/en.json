@@ -1,9 +1,5 @@
 {
     "cmds": {
-        "name": {
-            "initReport": "init_report",
-            "mute": "mute"
-        },
         "description": {
             "initReport": "Create report button",
             "mute": {
@@ -11,6 +7,15 @@
                 "user": "The user to be suspended",
                 "time": "Suspension time in minutes",
                 "reason": "Reason for suspension"
+            },
+            "unmute": {
+                "cmd": "Unmute user",
+                "user": "The user who needs to remove restrictions"
+            },
+            "warn": {
+                "cmd": "Issue a warning to the user",
+                "user": "The user who needs to issue a warning",
+                "reason": "Reason for the warning"
             }
         }
     },
@@ -19,7 +24,14 @@
             "text": "Send a question/complaint/suggestion",
             "button": "Create ticket"
         },
-        "mute": "Uset ${target} was suspended for ${time} minut(s).\nReason: ${reason}"
+        "mute": "User ${target} was suspended for ${time} minut(s).\nReason: ${reason}",
+        "unmute": "User ${target} can communicate again.",
+        "warn": {
+            "0": "User ${target} received a his first warning.\nReason: ${reason}",
+            "2": "User ${target} received a warning.\nReason: ${reason}",
+            "3": "User ${target} received a warning and was suspended for ${time} minuts.\nReason: ${reason}"
+        }
     },
-    "err_not_permission": "Error: insufficient rights."
+    "err_not_permission": "Error: insufficient rights.",
+    "warn_timeout": "3+ warns"
 }
