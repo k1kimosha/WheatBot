@@ -16,6 +16,10 @@
                 "cmd": "Issue a warning to the user",
                 "user": "The user who needs to issue a warning",
                 "reason": "Reason for the warning"
+            },
+            "unwarn": {
+                "cmd": "Remove ALL warnings from the user",
+                "user": "The user who needs to remove the warnings"
             }
         }
     },
@@ -30,8 +34,16 @@
             "0": "User ${target} received a his first warning.\nReason: ${reason}",
             "2": "User ${target} received a warning.\nReason: ${reason}",
             "3": "User ${target} received a warning and was suspended for ${time} minuts.\nReason: ${reason}"
+        },
+        "unwarn": {
+            "success": "All warnings have been removed from the user ${target}",
+            "err": "Mistake: the user hasn't warns"
         }
     },
-    "err_not_permission": "Error: insufficient rights.",
-    "warn_timeout": "3+ warns"
+    "err_not_permission": "Error: insufficient rights",
+    "warn_timeout": "3+ warns",
+    "msg_filter": {
+        "warn_link": "User ${target} recived a warning.\nReason: Posting spam links",
+        "reason_link": "Posting spam links"
+    }
 }
