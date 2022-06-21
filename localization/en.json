@@ -1,0 +1,25 @@
+{
+    "cmds": {
+        "name": {
+            "initReport": "init_report",
+            "mute": "mute"
+        },
+        "description": {
+            "initReport": "Create report button",
+            "mute": {
+                "cmd": "Temp mute user",
+                "user": "The user to be suspended",
+                "time": "Suspension time in minutes",
+                "reason": "Reason for suspension"
+            }
+        }
+    },
+    "interact": {
+        "initReport": {
+            "text": "Send a question/complaint/suggestion",
+            "button": "Create ticket"
+        },
+        "mute": "Uset ${target} was suspended for ${time} minut(s).\nReason: ${reason}"
+    },
+    "err_not_permission": "Error: insufficient rights."
+}
