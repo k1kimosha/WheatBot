@@ -35,81 +35,121 @@ bot.on("ready", () => {
     bot.application.commands.set([
         {
             name: "init_report",
-            description: lang[config.lang].cmds.description.initReport,
+            description: lang[config.lang].cmds.initReport,
             type: "CHAT_INPUT",
             defaultPermission: false
         },
         {
             name: "mute",
-            description: lang[config.lang].cmds.description.mute.cmd,
+            description: lang[config.lang].cmds.mute.cmd,
             type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "user",
                     type: "USER",
-                    description: lang[config.lang].cmds.description.mute.user,
+                    description: lang[config.lang].cmds.mute.user,
                     required: true
                 },
                 {
                     name: "time",
                     type: "NUMBER",
-                    description: lang[config.lang].cmds.description.mute.time,
+                    description: lang[config.lang].cmds.mute.time,
                     required: true
                 },
                 {
                     name: "reason",
                     type: "STRING",
-                    description: lang[config.lang].cmds.description.mute.reason,
+                    description: lang[config.lang].cmds.mute.reason,
                     required: true
                 }
             ]
         },
         {
             name: "unmute",
-            description: lang[config.lang].cmds.description.unmute.cmd,
+            description: lang[config.lang].cmds.unmute.cmd,
             type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "user",
                     type: "USER",
-                    description: lang[config.lang].cmds.description.unmute.user,
+                    description: lang[config.lang].cmds.unmute.user,
                     required: true
                 }
             ]
         },
         {
             name: "warn",
-            description: lang[config.lang].cmds.description.warn.cmd,
+            description: lang[config.lang].cmds.warn.cmd,
             type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "user",
                     type: "USER",
-                    description: lang[config.lang].cmds.description.warn.user,
+                    description: lang[config.lang].cmds.warn.user,
                     required: true
                 },
                 {
                     name: "reason",
                     type: "STRING",
-                    description: lang[config.lang].cmds.description.warn.reason,
+                    description: lang[config.lang].cmds.warn.reason,
                     required: true
                 }
             ]
         },
         {
             name: "unwarn",
-            description: lang[config.lang].cmds.description.unwarn.cmd,
+            description: lang[config.lang].cmds.unwarn.cmd,
             type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "user",
                     type: "USER",
-                    description: lang[config.lang].cmds.description.unwarn.user,
+                    description: lang[config.lang].cmds.unwarn.user,
                     required: true
+                }
+            ]
+        },
+        {
+            name: "links",
+            description: lang[config.lang].cmds.links.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "add",
+                    type: "STRING",
+                    description: lang[config.lang].cmds.links.add,
+                    required: false
+                },
+                {
+                    name: "remove",
+                    type: "STRING",
+                    description: lang[config.lang].cmds.links.remove,
+                    required: false
+                }
+            ]
+        },
+        {
+            name: "words",
+            description: lang[config.lang].cmds.words.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "add",
+                    type: "STRING",
+                    description: lang[config.lang].cmds.words.add,
+                    required: false
+                },
+                {
+                    name: "remove",
+                    type: "STRING",
+                    description: lang[config.lang].cmds.words.remove,
+                    required: false
                 }
             ]
         }
@@ -235,9 +275,73 @@ bot.on('interactionCreate', async interact => {
                     });
                 break;
             }
+            case "links": {
+                let add = interact.options.getString("add");
+                let remove = interact.options.getString("remove");
+                let p1 = 0, p2 = 0;
+                if (add != null) {
+                    pool.query("INSERT INTO `links` (link) VALUES (?)", [add]);
+                    p1 = 1;
+                }
+                if (remove != null) {
+                    pool.query("DELETE FROM `links` WHERE link = ?", [remove]);
+                    p2 = 2;
+                }
+                switch (p1 + p2) {
+                    case 1:
+                        interact.reply({
+                            content: lang[config.lang].interact.links[1].replace("${link}", add)
+                        });
+                        break;
+                    case 2:
+                        interact.reply({
+                            content: lang[config.lang].interact.links[2].replace("${link}", remove)
+                        });
+                        break;
+                    case 3:
+                        interact.reply({
+                            content: lang[config.lang].interact.links[3].replace("${link1}", add).replace("${link2}", remove)
+                        });
+                        break;
+                }
+                break;
+            }
+            case "words": {
+                let add = interact.options.getString("add");
+                let remove = interact.options.getString("remove");
+                let p1 = 0, p2 = 0;
+                if (add != null) {
+                    pool.query("INSERT INTO `ban-words` (word) VALUES (?)", [add]);
+                    p1 = 1;
+                }
+                if (remove != null) {
+                    pool.query("DELETE FROM `ban-words` WHERE word = ?", [remove]);
+                    p2 = 2;
+                }
+                switch (p1 + p2) {
+                    case 1:
+                        interact.reply({
+                            content: lang[config.lang].interact.words[1].replace("${word}", add)
+                        });
+                        break;
+                    case 2:
+                        interact.reply({
+                            content: lang[config.lang].interact.words[2].replace("${word}", remove)
+                        });
+                        break;
+                    case 3:
+                        interact.reply({
+                            content: lang[config.lang].interact.words[3].replace("${word1}", add).replace("${word2}", remove)
+                        });
+                        break;
+                }
+                break;
+            }
         }
     }
 });
+
+//Filter block
 
 bot.on('messageCreate', async msg => {
     if (!msg.author.bot) {
@@ -283,7 +387,53 @@ bot.on('messageCreate', async msg => {
 
                         msg.delete();
                     }
-                })
+                });
+        } else {
+            pool.query("SELECT * FROM `ban-words`")
+                .then(([words]) => {
+                    if (words.length > 0) {
+                        var check = 0;
+                        words.forEach(word => {
+                            if (msg.content.search(word.word) != -1) {
+                                check = 1;
+                            }
+                        });
+                        if (check == 1) {
+                            pool.query("SELECT * FROM `warns` WHERE uuid = ?", [msg.author.id])
+                            .then(([res]) => {
+                                switch (res.length) {
+                                    case 0:
+                                        pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [msg.author.id, 1, lang[config.lang].msg_filter.reason_words, "system"]);
+                                        break;
+                                    default:
+                                        if (res[0].warns < 2) {
+                                            let reasons = [];
+                                            reasons.push(lang[config.lang].msg_filter.reason_words);
+                                            reasons.push(res[0].reasons);
+                                            let gived = [];
+                                            gived.push("system");
+                                            gived.push(res[0].gived);
+                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
+                                        } else {
+                                            let reason = [];
+                                            reason.push(lang[config.lang].msg_filter.reason_words);
+                                            let reasons = reason.concat(JSON.parse(res[0].reasons));
+                                            let give = [];
+                                            give.push("system");
+                                            let gived = give.concat(JSON.parse(res[0].gived));
+                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
+                                            if (msg.member.moderatable) msg.member.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                        }
+                                        break;
+                                }
+                            });
+                            msg.channel.send({
+                                content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.username)
+                            });
+                            msg.delete();
+                        }
+                    }
+                });
         }
     }
 })

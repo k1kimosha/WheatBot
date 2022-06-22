@@ -1,26 +1,34 @@
 {
     "cmds": {
-        "description": {
-            "initReport": "Create report button",
-            "mute": {
-                "cmd": "Temp mute user",
-                "user": "The user to be suspended",
-                "time": "Suspension time in minutes",
-                "reason": "Reason for suspension"
-            },
-            "unmute": {
-                "cmd": "Unmute user",
-                "user": "The user who needs to remove restrictions"
-            },
-            "warn": {
-                "cmd": "Issue a warning to the user",
-                "user": "The user who needs to issue a warning",
-                "reason": "Reason for the warning"
-            },
-            "unwarn": {
-                "cmd": "Remove ALL warnings from the user",
-                "user": "The user who needs to remove the warnings"
-            }
+        "initReport": "Create report button",
+        "mute": {
+            "cmd": "Temp mute user",
+            "user": "The user to be suspended",
+            "time": "Suspension time in minutes",
+            "reason": "Reason for suspension"
+        },
+        "unmute": {
+            "cmd": "Unmute user",
+            "user": "The user who needs to remove restrictions"
+        },
+        "warn": {
+            "cmd": "Issue a warning to the user",
+            "user": "The user who needs to issue a warning",
+            "reason": "Reason for the warning"
+        },
+        "unwarn": {
+            "cmd": "Remove ALL warnings from the user",
+            "user": "The user who needs to remove the warnings"
+        },
+        "links": {
+            "cmd": "Manage allowed invite-links",
+            "add": "Allow an invite-link",
+            "remove": "Disallow an invite-link"
+        },
+        "words": {
+            "cmd": "Manage ban words",
+            "add": "Disallow a word",
+            "remove": "Allow a word"
         }
     },
     "interact": {
@@ -38,12 +46,24 @@
         "unwarn": {
             "success": "All warnings have been removed from the user ${target}",
             "err": "Mistake: the user hasn't warns"
+        },
+        "links": {
+            "1": "Link ${link} has been successfully added to the list of allowed",
+            "2": "Link ${link} successfully removed from the list of allowed",
+            "3": "Link ${link1} successfully added to the allowed list\nLink ${link 2} successfully removed from the allowed list"
+        },
+        "words": {
+            "1": "Ban word ${word} successfully added to the check list",
+            "2": "Ban worc ${word} successfully removed from the check list",
+            "3": "Ban word ${word1} successfully added to the check list\nBan word ${word2} successfully removed from the check list"
         }
     },
     "err_not_permission": "Error: insufficient rights",
     "warn_timeout": "3+ warns",
     "msg_filter": {
         "warn_link": "User ${target} recived a warning.\nReason: Posting spam links",
-        "reason_link": "Posting spam links"
+        "reason_link": "Posting spam links",
+        "warn_words": "User ${target} recived a warning.\nReason: Using ban word",
+        "reason_words": "Using ban words"
     }
 }
