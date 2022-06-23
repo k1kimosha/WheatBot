@@ -5,7 +5,8 @@ const { createPool } = require("mysql2");
 const config = require("./config.json");
 
 var lang = {
-    "en": require("./localization/en.json")
+    "en": require("./localization/en.json"),
+    "ru": require("./localization/ru.json")
 };
 
 const bot = new Client({
@@ -33,12 +34,6 @@ bot.on("ready", () => {
     bot.user.setPresence({ status: "dnd" });
 
     bot.application.commands.set([
-        {
-            name: "init_report",
-            description: lang[config.lang].cmds.initReport,
-            type: "CHAT_INPUT",
-            defaultPermission: false
-        },
         {
             name: "mute",
             description: lang[config.lang].cmds.mute.cmd,
@@ -152,6 +147,32 @@ bot.on("ready", () => {
                     required: false
                 }
             ]
+        },
+        {
+            name: "report",
+            description: lang[config.lang].cmds.report.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "init",
+                    description: lang[config.lang].cmds.report.init,
+                    type: "SUB_COMMAND"
+                },
+                {
+                    name: "manage",
+                    description: lang[config.lang].cmds.report.manage,
+                    type: "SUB_COMMAND",
+                    options: [
+                        {
+                            name: "category",
+                            description: lang[config.lang].cmds.report.category,
+                            type: "CHANNEL",
+                            required: false
+                        }
+                    ]
+                }
+            ]
         }
     ])
 });
@@ -161,24 +182,39 @@ bot.on("ready", () => {
 bot.on('interactionCreate', async interact => {
     if (interact.isCommand()) {
         switch (interact.commandName) {
-            case "init_report": {
-                interact.reply({
-                    content: lang[config.lang].interact.initReport.text,
-                    components: [
-                        {
-                            type: "ACTION_ROW",
-                            components: [
-                                {
-                                    type: "BUTTON",
-                                    label: lang[config.lang].interact.initReport.button,
-                                    style: "SECONDARY",
-                                    customId: "reportCreate",
-                                    emoji: '💢'
-                                }
-                            ],
-                        }
-                    ]
-                });
+            case "report": {
+                if (interact.options.getSubcommand() == "init") {
+                    interact.reply({
+                        content: lang[config.lang].interact.report.init.text,
+                        components: [
+                            {
+                                type: "ACTION_ROW",
+                                components: [
+                                    {
+                                        type: "BUTTON",
+                                        label: lang[config.lang].interact.report.init.button,
+                                        style: "SECONDARY",
+                                        customId: "reportCreate",
+                                        emoji: '💢'
+                                    }
+                                ],
+                            }
+                        ]
+                    });
+                } else if (interact.options.getSubcommand() == "manage") {
+                    if (interact.options.getChannel("category") != null) {
+                        let channel = interact.options.getChannel("category");
+                        pool.query("SELECT * FROM `config` WHERE type = ?", [0])
+                            .then(([res]) => {
+                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
+                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
+                            });
+                        interact.reply({
+                            content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
+                            ephemeral: true
+                        });
+                    }
+                }
                 break;
             }
             case "mute": {
@@ -400,33 +436,33 @@ bot.on('messageCreate', async msg => {
                         });
                         if (check == 1) {
                             pool.query("SELECT * FROM `warns` WHERE uuid = ?", [msg.author.id])
-                            .then(([res]) => {
-                                switch (res.length) {
-                                    case 0:
-                                        pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [msg.author.id, 1, lang[config.lang].msg_filter.reason_words, "system"]);
-                                        break;
-                                    default:
-                                        if (res[0].warns < 2) {
-                                            let reasons = [];
-                                            reasons.push(lang[config.lang].msg_filter.reason_words);
-                                            reasons.push(res[0].reasons);
-                                            let gived = [];
-                                            gived.push("system");
-                                            gived.push(res[0].gived);
-                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                        } else {
-                                            let reason = [];
-                                            reason.push(lang[config.lang].msg_filter.reason_words);
-                                            let reasons = reason.concat(JSON.parse(res[0].reasons));
-                                            let give = [];
-                                            give.push("system");
-                                            let gived = give.concat(JSON.parse(res[0].gived));
-                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                            if (msg.member.moderatable) msg.member.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
-                                        }
-                                        break;
-                                }
-                            });
+                                .then(([res]) => {
+                                    switch (res.length) {
+                                        case 0:
+                                            pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [msg.author.id, 1, lang[config.lang].msg_filter.reason_words, "system"]);
+                                            break;
+                                        default:
+                                            if (res[0].warns < 2) {
+                                                let reasons = [];
+                                                reasons.push(lang[config.lang].msg_filter.reason_words);
+                                                reasons.push(res[0].reasons);
+                                                let gived = [];
+                                                gived.push("system");
+                                                gived.push(res[0].gived);
+                                                pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
+                                            } else {
+                                                let reason = [];
+                                                reason.push(lang[config.lang].msg_filter.reason_words);
+                                                let reasons = reason.concat(JSON.parse(res[0].reasons));
+                                                let give = [];
+                                                give.push("system");
+                                                let gived = give.concat(JSON.parse(res[0].gived));
+                                                pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
+                                                if (msg.member.moderatable) msg.member.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                            }
+                                            break;
+                                    }
+                                });
                             msg.channel.send({
                                 content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.username)
                             });
