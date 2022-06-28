@@ -251,43 +251,33 @@ bot.on('interactionCreate', async interact => {
             }
             case "warn": {
                 let target = interact.options.getMember("user");
+                let reason = interact.options.getString("reason");
+                let gived = interact.member.id;
                 pool.query("SELECT * FROM `warns` WHERE uuid = ?", [target.id])
                     .then(([res]) => {
                         switch (res.length) {
-                            case 0:
-                                let reason = interact.options.getString("reason");
-                                pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [target.id, 1, reason, interact.user.id]);
+                            case 0: {
+                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
                                 interact.reply({
                                     content: lang[config.lang].interact.warn[0].replace("${target}", target.displayName).replace("${reason}", reason)
                                 });
                                 break;
-                            default:
-                                if (res[0].warns < 2) {
-                                    let reason = interact.options.getString("reason");
-                                    let reasons = [];
-                                    reasons.push(reason);
-                                    reasons.push(res[0].reasons);
-                                    let gived = [];
-                                    gived.push(interact.user.id);
-                                    gived.push(res[0].gived);
-                                    pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), target.id]);
-                                    interact.reply({
-                                        content: lang[config.lang].interact.warn[2].replace("${target}", target.displayName).replace("${reason}", reason)
-                                    });
-                                } else {
-                                    let reason = [];
-                                    reason.push(interact.options.getString("reason"));
-                                    let reasons = reason.concat(JSON.parse(res[0].reasons));
-                                    let give = [];
-                                    give.push(interact.user.id);
-                                    let gived = give.concat(JSON.parse(res[0].gived));
-                                    pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), target.id]);
-                                    if (target.moderatable) target.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
-                                    interact.reply({
-                                        content: lang[config.lang].interact.warn[3].replace("${target}", target.displayName).replace("${time}", res[0].warns * 30).replace("${reason}", reason)
-                                    });
-                                }
+                            }
+                            case 1: {
+                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.warn[2].replace("${target}", target.displayName).replace("${reason}", reason)
+                                });
                                 break;
+                            }
+                            default: {
+                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.warn[3].replace("${target}", target.displayName).replace("${time}", (res.length + 1) * 30).replace("${reason}", reason)
+                                });
+                                if (target.moderatable) target.timeout((res.length + 1) * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                break;
+                            }
                         }
                     });
                 break;
@@ -312,8 +302,10 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "links": {
-                let add = interact.options.getString("add");
-                let remove = interact.options.getString("remove");
+                let add = null;
+                let remove = null;
+                if (interact.options.getString("add") != null) add = interact.options.getString("add").split("/")[interact.options.getString("add").split("/").length - 1];
+                if (interact.options.getString("remove") != null) remove = interact.options.getString("remove").split("/")[interact.options.getString("remove").split("/").length - 1];
                 let p1 = 0, p2 = 0;
                 if (add != null) {
                     pool.query("INSERT INTO `links` (link) VALUES (?)", [add]);
@@ -384,40 +376,31 @@ bot.on('messageCreate', async msg => {
         if (msg.content.search(/https*:\/\/[db][il1]sc[o0]r[db]\.g[il1][tf][ft]/g) != -1) {
             msg.delete();
         } else if (msg.content.search(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g) != -1) {
-            let link = msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g);
-            pool.query("SELECT * FROM `links` WHERE link = ?", [link[0]])
+            let link = msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g)[0].split("/")[msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g)[0].split("/").length - 1];
+            pool.query("SELECT * FROM `links` WHERE link = ?", [link])
                 .then(([res]) => {
                     if (res.length == 0) {
                         msg.channel.send({
                             content: lang[config.lang].msg_filter.warn_link.replace("${target}", msg.author.username)
                         });
-
+                        let target = msg.member;
+                        let reason = lang[config.lang].msg_filter.reason_link;
                         pool.query("SELECT * FROM `warns` WHERE uuid = ?", [msg.author.id])
                             .then(([res]) => {
                                 switch (res.length) {
-                                    case 0:
-                                        pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [msg.author.id, 1, lang[config.lang].msg_filter.reason_link, "system"]);
+                                    case 0: {
+                                        pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
                                         break;
-                                    default:
-                                        if (res[0].warns < 2) {
-                                            let reasons = [];
-                                            reasons.push(lang[config.lang].msg_filter.reason_link);
-                                            reasons.push(res[0].reasons);
-                                            let gived = [];
-                                            gived.push("system");
-                                            gived.push(res[0].gived);
-                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                        } else {
-                                            let reason = [];
-                                            reason.push(lang[config.lang].msg_filter.reason_link);
-                                            let reasons = reason.concat(JSON.parse(res[0].reasons));
-                                            let give = [];
-                                            give.push("system");
-                                            let gived = give.concat(JSON.parse(res[0].gived));
-                                            pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                            if (msg.member.moderatable) msg.member.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
-                                        }
+                                    }
+                                    case 1: {
+                                        pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
                                         break;
+                                    }
+                                    default: {
+                                        pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
+                                        if (target.moderatable) target.timeout((res.length + 1) * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                        break;
+                                    }
                                 }
                             });
 
@@ -435,32 +418,24 @@ bot.on('messageCreate', async msg => {
                             }
                         });
                         if (check == 1) {
+                            let target = msg.member;
+                            let reason = lang[config.lang].msg_filter.reason_words;
                             pool.query("SELECT * FROM `warns` WHERE uuid = ?", [msg.author.id])
                                 .then(([res]) => {
                                     switch (res.length) {
-                                        case 0:
-                                            pool.query("INSERT INTO `warns` (uuid, warns, reasons, gived) VALUES (?,?,?,?)", [msg.author.id, 1, lang[config.lang].msg_filter.reason_words, "system"]);
+                                        case 0: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
                                             break;
-                                        default:
-                                            if (res[0].warns < 2) {
-                                                let reasons = [];
-                                                reasons.push(lang[config.lang].msg_filter.reason_words);
-                                                reasons.push(res[0].reasons);
-                                                let gived = [];
-                                                gived.push("system");
-                                                gived.push(res[0].gived);
-                                                pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                            } else {
-                                                let reason = [];
-                                                reason.push(lang[config.lang].msg_filter.reason_words);
-                                                let reasons = reason.concat(JSON.parse(res[0].reasons));
-                                                let give = [];
-                                                give.push("system");
-                                                let gived = give.concat(JSON.parse(res[0].gived));
-                                                pool.query("UPDATE `warns` SET warns = ?, reasons = ?, gived = ? WHERE uuid = ?", [res[0].warns + 1, JSON.stringify(reasons), JSON.stringify(gived), msg.author.id]);
-                                                if (msg.member.moderatable) msg.member.timeout(res[0].warns * 30 * 60 * 1000, lang[config.lang].warn_timeout);
-                                            }
+                                        }
+                                        case 1: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
                                             break;
+                                        }
+                                        default: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, "system"]);
+                                            if (target.moderatable) target.timeout((res.length + 1) * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                            break;
+                                        }
                                     }
                                 });
                             msg.channel.send({
