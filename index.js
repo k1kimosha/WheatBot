@@ -168,7 +168,8 @@ bot.on("ready", () => {
                             name: "category",
                             description: lang[config.lang].cmds.report.category,
                             type: "CHANNEL",
-                            required: false
+                            channel_types: [4],
+                            required: true
                         }
                     ]
                 }
@@ -188,12 +189,14 @@ bot.on("ready", () => {
                             name: "admin",
                             description: lang[config.lang].cmds.logs.channels.admin,
                             type: "CHANNEL",
+                            channel_types: [0],
                             required: false
                         },
                         {
                             name: "violation",
                             description: lang[config.lang].cmds.logs.channels.violation,
                             type: "CHANNEL",
+                            channel_types: [0],
                             required: false
                         }
                     ]
@@ -201,7 +204,7 @@ bot.on("ready", () => {
                 {
                     name: "enabled",
                     description: lang[config.lang].cmds.logs.enabled,
-                    type: "BOOLEAN"
+                    type: "SUB_COMMAND"
                 }
             ]
         }
@@ -233,18 +236,16 @@ bot.on('interactionCreate', async interact => {
                         ]
                     });
                 } else if (interact.options.getSubcommand() == "manage") {
-                    if (interact.options.getChannel("category") != null) {
-                        let channel = interact.options.getChannel("category");
-                        pool.query("SELECT * FROM `config` WHERE type = ?", [0])
-                            .then(([res]) => {
-                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
-                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
-                            });
-                        interact.reply({
-                            content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
-                            ephemeral: true
+                    let channel = interact.options.getChannel("category");
+                    pool.query("SELECT * FROM `config` WHERE type = ?", [0])
+                        .then(([res]) => {
+                            if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
+                            else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
                         });
-                    }
+                    interact.reply({
+                        content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
+                        ephemeral: true
+                    });
                 }
                 break;
             }
@@ -393,6 +394,66 @@ bot.on('interactionCreate', async interact => {
                             content: lang[config.lang].interact.words[3].replace("${word1}", add).replace("${word2}", remove)
                         });
                         break;
+                }
+                break;
+            }
+            case "logs": {
+                if (interact.options.getSubcommand() == "channels") {
+                    let admin = interact.options.getChannel("admin");
+                    let violation = interact.options.getChannel("violation");
+                    let p1 = 0, p2 = 0;
+                    if (admin != null) {
+                        pool.query("SELECT * FROM `config` WHERE type = ?", [2])
+                            .then(([res]) => {
+                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [2, admin.id]);
+                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [admin.id, 2]);
+                            });
+                        p1 = 1;
+                    }
+                    if (violation != null) {
+                        pool.query("SELECT * FROM `config` WHERE type = ?", [3])
+                            .then(([res]) => {
+                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [3, violation.id]);
+                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [violation.id, 3]);
+                                p2 = 2;
+                            })
+                    }
+                    switch (p1 + p2) {
+                        case 1: {
+                            interact.reply({
+                                content: lang[config.lang].interact.logs.channels[1].replace("${channel}", admin.name)
+                            });
+                            break;
+                        }
+                        case 2: {
+                            interact.reply({
+                                content: lang[config.lang].interact.logs.channels[2].replace("${channel}", violation.name)
+                            });
+                            break;
+                        }
+                        case 3: {
+                            interact.reply({
+                                content: lang[config.lang].interact.logs.channels[3].replace("${channel1}", admin.name).replace("${channel2}", violation.name)
+                            });
+                            break;
+                        }
+                    }
+                } else if (interact.options.getSubcommand() == "enabled") {
+                    pool.query("SELECT * FROM `config` WHERE type = ?", [1])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                switch (res[0].value) {
+                                    case "1":
+                                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [false, 1]);
+                                        break;
+                                    case "0":
+                                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [true, 1]);
+                                        break;
+                                }
+                            } else {
+                                pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [1, true]);
+                            }
+                        })
                 }
                 break;
             }
