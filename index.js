@@ -173,6 +173,37 @@ bot.on("ready", () => {
                     ]
                 }
             ]
+        },
+        {
+            name: "logs",
+            description: lang[config.lang].cmds.logs.cmd,
+            type: "CHAT_INPUT",
+            options: [
+                {
+                    name: "channels",
+                    description: lang[config.lang].cmds.logs.channels.cmd,
+                    type: "SUB_COMMAND",
+                    options: [
+                        {
+                            name: "admin",
+                            description: lang[config.lang].cmds.logs.channels.admin,
+                            type: "CHANNEL",
+                            required: false
+                        },
+                        {
+                            name: "violation",
+                            description: lang[config.lang].cmds.logs.channels.violation,
+                            type: "CHANNEL",
+                            required: false
+                        }
+                    ]
+                },
+                {
+                    name: "enabled",
+                    description: lang[config.lang].cmds.logs.enabled,
+                    type: "BOOLEAN"
+                }
+            ]
         }
     ])
 });
@@ -418,6 +449,9 @@ bot.on('messageCreate', async msg => {
                             }
                         });
                         if (check == 1) {
+                            msg.channel.send({
+                                content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.username)
+                            });
                             let target = msg.member;
                             let reason = lang[config.lang].msg_filter.reason_words;
                             pool.query("SELECT * FROM `warns` WHERE uuid = ?", [msg.author.id])
@@ -438,9 +472,6 @@ bot.on('messageCreate', async msg => {
                                         }
                                     }
                                 });
-                            msg.channel.send({
-                                content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.username)
-                            });
                             msg.delete();
                         }
                     }
