@@ -246,6 +246,22 @@ bot.on('interactionCreate', async interact => {
                         content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
                         ephemeral: true
                     });
+                    pool.query("SELECT * FROM `config`")
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                let enabled = false;
+                                let admin = null;
+                                res.forEach(item => {
+                                    if (item.type == 1 && item.value == 1) enabled = true;
+                                    if (item.type == 2) admin = item.value;
+                                });
+                                if (enabled && admin != null) {
+                                    interact.guild.channels.cache.get(admin).send({
+                                        content: lang[config.lang].interact.report.manage.logs.replace("${admin}", interact.member.displayName).replace("${channel}", channel),
+                                    });
+                                }
+                            }
+                        });
                 }
                 break;
             }
@@ -256,8 +272,24 @@ bot.on('interactionCreate', async interact => {
                 if (target.moderatable) {
                     target.timeout(time * 60 * 1000, reason);
                     interact.reply({
-                        content: lang[config.lang].interact.mute.replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason)
+                        content: lang[config.lang].interact.mute.success.replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason)
                     });
+                    pool.query("SELECT * FROM `config`")
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                let enabled = false;
+                                let admin = null;
+                                res.forEach(item => {
+                                    if (item.type == 1 && item.value == 1) enabled = true;
+                                    if (item.type == 2) admin = item.value;
+                                });
+                                if (enabled && admin != null) {
+                                    interact.guild.channels.cache.get(admin).send({
+                                        content: lang[config.lang].interact.mute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason),
+                                    });
+                                }
+                            }
+                        });
                 } else {
                     interact.reply({
                         content: lang[config.lang].err_not_permission,
@@ -271,8 +303,24 @@ bot.on('interactionCreate', async interact => {
                 if (target.moderatable) {
                     target.timeout(null);
                     interact.reply({
-                        content: lang[config.lang].interact.unmute.replace("${target}", target.displayName)
+                        content: lang[config.lang].interact.unmute.success.replace("${target}", target.displayName)
                     });
+                    pool.query("SELECT * FROM `config`")
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                let enabled = false;
+                                let admin = null;
+                                res.forEach(item => {
+                                    if (item.type == 1 && item.value == 1) enabled = true;
+                                    if (item.type == 2) admin = item.value;
+                                });
+                                if (enabled && admin != null) {
+                                    interact.guild.channels.cache.get(admin).send({
+                                        content: lang[config.lang].interact.unmute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
+                                    });
+                                }
+                            }
+                        });
                 } else {
                     interact.reply({
                         content: lang[config.lang].err_not_permission,
@@ -312,6 +360,22 @@ bot.on('interactionCreate', async interact => {
                             }
                         }
                     });
+                pool.query("SELECT * FROM `config`")
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            let enabled = false;
+                            let admin = null;
+                            res.forEach(item => {
+                                if (item.type == 1 && item.value == 1) enabled = true;
+                                if (item.type == 2) admin = item.value;
+                            });
+                            if (enabled && admin != null) {
+                                interact.guild.channels.cache.get(admin).send({
+                                    content: lang[config.lang].interact.warn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
+                                });
+                            }
+                        }
+                    });
                 break;
             }
             case "unwarn": {
@@ -324,6 +388,22 @@ bot.on('interactionCreate', async interact => {
                                 content: lang[config.lang].interact.unwarn.success.replace("${target}", target.displayName),
                                 ephemeral: true
                             });
+                            pool.query("SELECT * FROM `config`")
+                                .then(([res]) => {
+                                    if (res.length != 0) {
+                                        let enabled = false;
+                                        let admin = null;
+                                        res.forEach(item => {
+                                            if (item.type == 1 && item.value == 1) enabled = true;
+                                            if (item.type == 2) admin = item.value;
+                                        });
+                                        if (enabled && admin != null) {
+                                            interact.guild.channels.cache.get(admin).send({
+                                                content: lang[config.lang].interact.unwarn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
+                                            });
+                                        }
+                                    }
+                                });
                         } else {
                             interact.reply({
                                 content: lang[config.lang].interact.unwarn.err,
@@ -352,16 +432,64 @@ bot.on('interactionCreate', async interact => {
                         interact.reply({
                             content: lang[config.lang].interact.links[1].replace("${link}", add)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.links.logs1.replace("${admin}", interact.member.displayName).replace("${link}", add)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                     case 2:
                         interact.reply({
                             content: lang[config.lang].interact.links[2].replace("${link}", remove)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.links.logs2.replace("${admin}", interact.member.displayName).replace("${link}", remove)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                     case 3:
                         interact.reply({
                             content: lang[config.lang].interact.links[3].replace("${link1}", add).replace("${link2}", remove)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.links.logs3.replace("${admin}", interact.member.displayName).replace("${link1}", add).replace("${link2}", remove)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                 }
                 break;
@@ -383,16 +511,64 @@ bot.on('interactionCreate', async interact => {
                         interact.reply({
                             content: lang[config.lang].interact.words[1].replace("${word}", add)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.words.logs1.replace("${admin}", interact.member.displayName).replace("${word}", add)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                     case 2:
                         interact.reply({
                             content: lang[config.lang].interact.words[2].replace("${word}", remove)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.words.logs2.replace("${admin}", interact.member.displayName).replace("${word}", remove)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                     case 3:
                         interact.reply({
                             content: lang[config.lang].interact.words[3].replace("${word1}", add).replace("${word2}", remove)
                         });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let admin = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 2) admin = item.value;
+                                    });
+                                    if (enabled && admin != null) {
+                                        interact.guild.channels.cache.get(admin).send({
+                                            content: lang[config.lang].interact.words.logs3.replace("${admin}", interact.member.displayName).replace("${word1}", add).replace("${word2}", remove)
+                                        });
+                                    }
+                                }
+                            });
                         break;
                 }
                 break;
@@ -445,13 +621,22 @@ bot.on('interactionCreate', async interact => {
                                 switch (res[0].value) {
                                     case "1":
                                         pool.query("UPDATE `config` SET value = ? WHERE type = ?", [false, 1]);
+                                        interact.reply({
+                                            content: lang[config.lang].interact.logs.disabled
+                                        });
                                         break;
                                     case "0":
                                         pool.query("UPDATE `config` SET value = ? WHERE type = ?", [true, 1]);
+                                        interact.reply({
+                                            content: lang[config.lang].interact.logs.enabled
+                                        });
                                         break;
                                 }
                             } else {
                                 pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [1, true]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.logs.enabled
+                                });
                             }
                         })
                 }
