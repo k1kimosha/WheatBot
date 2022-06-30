@@ -591,8 +591,8 @@ bot.on('interactionCreate', async interact => {
                             .then(([res]) => {
                                 if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [3, violation.id]);
                                 else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [violation.id, 3]);
-                                p2 = 2;
-                            })
+                            });
+                        p2 = 2;
                     }
                     switch (p1 + p2) {
                         case 1: {
@@ -680,6 +680,22 @@ bot.on('messageCreate', async msg => {
                                     }
                                 }
                             });
+                        pool.query("SELECT * FROM `config`")
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let enabled = false;
+                                    let violation = null;
+                                    res.forEach(item => {
+                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                        if (item.type == 3) violation = item.value;
+                                    });
+                                    if (enabled && violation != null) {
+                                        msg.guild.channels.cache.get(violation).send({
+                                            content: lang[config.lang].msg_filter.logs_link.replace("${target}", target)
+                                        });
+                                    }
+                                }
+                            });
 
                         msg.delete();
                     }
@@ -718,10 +734,26 @@ bot.on('messageCreate', async msg => {
                                         }
                                     }
                                 });
+                            pool.query("SELECT * FROM `config`")
+                                .then(([res]) => {
+                                    if (res.length != 0) {
+                                        let enabled = false;
+                                        let violation = null;
+                                        res.forEach(item => {
+                                            if (item.type == 1 && item.value == 1) enabled = true;
+                                            if (item.type == 3) violation = item.value;
+                                        });
+                                        if (enabled && violation != null) {
+                                            msg.guild.channels.cache.get(violation).send({
+                                                content: lang[config.lang].msg_filter.logs_words.replace("${target}", target)
+                                            });
+                                        }
+                                    }
+                                });
                             msg.delete();
                         }
                     }
                 });
         }
     }
-})
+});
