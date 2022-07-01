@@ -7,5 +7,6 @@
         "password":"",
         "database":""
     },
-    "lang":""
+    "lang":"",
+    "guild": ""
 }

@@ -30,9 +30,41 @@ const pool = createPool({
 
 bot.login(config.token);
 
+bot.on('guildMemberAdd', member => {
+    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+        .then(([res]) => {
+            if (res.length != 0) {
+                let channel = member.guild.channels.cache.get(res[0].value);
+                if (channel != null) {
+                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                }
+            }
+        });
+});
+
+bot.on('guildMemberRemove', member => {
+    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+        .then(([res]) => {
+            if (res.length != 0) {
+                let channel = member.guild.channels.cache.get(res[0].value);
+                if (channel != null) {
+                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                }
+            }
+        });
+});
+
 bot.on("ready", () => {
     bot.user.setPresence({ status: "dnd" });
-
+        pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+        .then(([res]) => {
+            if (res.length != 0) {
+                let channel = bot.guilds.cache.get(config.guild).channels.cache.get(res[0].value);
+                if (channel != null) {
+                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", bot.guilds.cache.get(config.guild).memberCount))
+                }
+            }
+        });
     bot.application.commands.set([
         {
             name: "mute",
@@ -205,6 +237,18 @@ bot.on("ready", () => {
                     name: "enabled",
                     description: lang[config.lang].cmds.logs.enabled,
                     type: "SUB_COMMAND"
+                }
+            ]
+        },
+        {
+            name: "memberc",
+            description: lang[config.lang].cmds.memberc.cmd,
+            options: [
+                {
+                    name: "channel",
+                    description: lang[config.lang].cmds.memberc.channel,
+                    type: "CHANNEL",
+                    channel_types: [0]
                 }
             ]
         }
@@ -430,7 +474,8 @@ bot.on('interactionCreate', async interact => {
                 switch (p1 + p2) {
                     case 1:
                         interact.reply({
-                            content: lang[config.lang].interact.links[1].replace("${link}", add)
+                            content: lang[config.lang].interact.links[1].replace("${link}", add),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -451,7 +496,8 @@ bot.on('interactionCreate', async interact => {
                         break;
                     case 2:
                         interact.reply({
-                            content: lang[config.lang].interact.links[2].replace("${link}", remove)
+                            content: lang[config.lang].interact.links[2].replace("${link}", remove),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -472,7 +518,8 @@ bot.on('interactionCreate', async interact => {
                         break;
                     case 3:
                         interact.reply({
-                            content: lang[config.lang].interact.links[3].replace("${link1}", add).replace("${link2}", remove)
+                            content: lang[config.lang].interact.links[3].replace("${link1}", add).replace("${link2}", remove),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -509,7 +556,8 @@ bot.on('interactionCreate', async interact => {
                 switch (p1 + p2) {
                     case 1:
                         interact.reply({
-                            content: lang[config.lang].interact.words[1].replace("${word}", add)
+                            content: lang[config.lang].interact.words[1].replace("${word}", add),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -530,7 +578,8 @@ bot.on('interactionCreate', async interact => {
                         break;
                     case 2:
                         interact.reply({
-                            content: lang[config.lang].interact.words[2].replace("${word}", remove)
+                            content: lang[config.lang].interact.words[2].replace("${word}", remove),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -551,7 +600,8 @@ bot.on('interactionCreate', async interact => {
                         break;
                     case 3:
                         interact.reply({
-                            content: lang[config.lang].interact.words[3].replace("${word1}", add).replace("${word2}", remove)
+                            content: lang[config.lang].interact.words[3].replace("${word1}", add).replace("${word2}", remove),
+                            ephemeral: true
                         });
                         pool.query("SELECT * FROM `config`")
                             .then(([res]) => {
@@ -597,19 +647,22 @@ bot.on('interactionCreate', async interact => {
                     switch (p1 + p2) {
                         case 1: {
                             interact.reply({
-                                content: lang[config.lang].interact.logs.channels[1].replace("${channel}", admin.name)
+                                content: lang[config.lang].interact.logs.channels[1].replace("${channel}", admin.name),
+                                ephemeral: true
                             });
                             break;
                         }
                         case 2: {
                             interact.reply({
-                                content: lang[config.lang].interact.logs.channels[2].replace("${channel}", violation.name)
+                                content: lang[config.lang].interact.logs.channels[2].replace("${channel}", violation.name),
+                                ephemeral: true
                             });
                             break;
                         }
                         case 3: {
                             interact.reply({
-                                content: lang[config.lang].interact.logs.channels[3].replace("${channel1}", admin.name).replace("${channel2}", violation.name)
+                                content: lang[config.lang].interact.logs.channels[3].replace("${channel1}", admin.name).replace("${channel2}", violation.name),
+                                ephemeral: true
                             });
                             break;
                         }
@@ -622,24 +675,51 @@ bot.on('interactionCreate', async interact => {
                                     case "1":
                                         pool.query("UPDATE `config` SET value = ? WHERE type = ?", [false, 1]);
                                         interact.reply({
-                                            content: lang[config.lang].interact.logs.disabled
+                                            content: lang[config.lang].interact.logs.disabled,
+                                            ephemeral: true
                                         });
                                         break;
                                     case "0":
                                         pool.query("UPDATE `config` SET value = ? WHERE type = ?", [true, 1]);
                                         interact.reply({
-                                            content: lang[config.lang].interact.logs.enabled
+                                            content: lang[config.lang].interact.logs.enabled,
+                                            ephemeral: true
                                         });
                                         break;
                                 }
                             } else {
                                 pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [1, true]);
                                 interact.reply({
-                                    content: lang[config.lang].interact.logs.enabled
+                                    content: lang[config.lang].interact.logs.enabled,
+                                    ephemeral: true
                                 });
                             }
                         })
                 }
+                break;
+            }
+            case "memberc": {
+                pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+                .then(([res]) => {
+                    if (res.length != 0) {
+                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [interact.options.getChannel("channel").id, 4]);
+                    } else {
+                        pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [4, interact.options.getChannel("channel").id]);
+                    }
+                    interact.reply({
+                        content: lang[config.lang].interact.memberc.cmd.replace("${channel}", interact.options.getChannel("channel")),
+                        ephemeral: true
+                    });
+                    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            let channel = interact.guild.channels.cache.get(res[0].value);
+                            if (channel != null) {
+                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
+                            }
+                        }
+                    });
+                });
                 break;
             }
         }
