@@ -211,6 +211,7 @@ bot.on("ready", () => {
             name: "logs",
             description: lang[config.lang].cmds.logs.cmd,
             type: "CHAT_INPUT",
+            defaultPermission: false,
             options: [
                 {
                     name: "channels",
@@ -243,12 +244,15 @@ bot.on("ready", () => {
         {
             name: "memberc",
             description: lang[config.lang].cmds.memberc.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
             options: [
                 {
                     name: "channel",
                     description: lang[config.lang].cmds.memberc.channel,
                     type: "CHANNEL",
-                    channel_types: [0]
+                    channel_types: [0],
+                    required: true
                 }
             ]
         }
