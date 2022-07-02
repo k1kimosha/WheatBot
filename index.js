@@ -6,7 +6,8 @@ const config = require("./config.json");
 
 var lang = {
     "en": require("./localization/en.json"),
-    "ru": require("./localization/ru.json")
+    "ru": require("./localization/ru.json"),
+    "ua": require("./localization/ua.json")
 };
 
 const bot = new Client({
@@ -40,6 +41,15 @@ bot.on('guildMemberAdd', member => {
                 }
             }
         });
+    pool.query("SELECT * FROM `config` WHERE type = ?", [5])
+    .then(([res]) => {
+        if (res.length != 0) {
+            let role = member.guild.roles.cache.get(res[0].value);
+            if (role != null) {
+                member.roles.add(role);
+            }
+        }
+    });
 });
 
 bot.on('guildMemberRemove', member => {
@@ -266,6 +276,20 @@ bot.on("ready", () => {
                     name: "role",
                     description: lang[config.lang].cmds.grantrole.role,
                     type: "ROLE",
+                    required: true
+                }
+            ]
+        },
+        {
+            name: "welcomerole",
+            type: "CHAT_INPUT",
+            description: lang[config.lang].cmds.welcomerole.cmd,
+            defaultPermission: false,
+            options: [
+                {
+                    name: "role",
+                    type: "ROLE",
+                    description: lang[config.lang].cmds.welcomerole.role,
                     required: true
                 }
             ]
@@ -744,10 +768,21 @@ bot.on('interactionCreate', async interact => {
                 let role = interact.options.getRole("role");
                 console.log(role.name);
                 interact.guild.members.fetch().then(members => {
-                members.filter(member => member.roles.cache.has(role) && !member.user.bot);
-                    members.forEach(member => {
-                        member.roles.add(role.id);
-                    });
+                    members.filter(member => member.roles.cache.has(role) && !member.user.bot);
+                    if (members.size != 0) {
+                        members.forEach(member => {
+                            member.roles.add(role.id);
+                        });
+                    }
+                });
+                break;
+            }
+            case "welcomerole": {
+                let role = interact.options.getRole("role");
+                pool.query("SELECT * FROM `config` WHERE type = ?", [5])
+                .then(([res]) => {
+                    if (res.length !=0 ) pool.query("UPDATE `config` SET value = ? WHERE type = ?", [role.id, 5]);
+                    else pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [5, role.id]);
                 });
                 break;
             }
