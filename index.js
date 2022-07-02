@@ -56,7 +56,7 @@ bot.on('guildMemberRemove', member => {
 
 bot.on("ready", () => {
     bot.user.setPresence({ status: "dnd" });
-        pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
                 let channel = bot.guilds.cache.get(config.guild).channels.cache.get(res[0].value);
@@ -251,7 +251,21 @@ bot.on("ready", () => {
                     name: "channel",
                     description: lang[config.lang].cmds.memberc.channel,
                     type: "CHANNEL",
-                    channel_types: [0],
+                    channel_types: [2],
+                    required: true
+                }
+            ]
+        },
+        {
+            name: "grantrole",
+            type: "CHAT_INPUT",
+            description: lang[config.lang].cmds.grantrole.cmd,
+            defaultPermission: false,
+            options: [
+                {
+                    name: "role",
+                    description: lang[config.lang].cmds.grantrole.role,
+                    type: "ROLE",
                     required: true
                 }
             ]
@@ -704,24 +718,35 @@ bot.on('interactionCreate', async interact => {
             }
             case "memberc": {
                 pool.query("SELECT * FROM `config` WHERE type = ?", [4])
-                .then(([res]) => {
-                    if (res.length != 0) {
-                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [interact.options.getChannel("channel").id, 4]);
-                    } else {
-                        pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [4, interact.options.getChannel("channel").id]);
-                    }
-                    interact.reply({
-                        content: lang[config.lang].interact.memberc.cmd.replace("${channel}", interact.options.getChannel("channel")),
-                        ephemeral: true
-                    });
-                    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
                     .then(([res]) => {
                         if (res.length != 0) {
-                            let channel = interact.guild.channels.cache.get(res[0].value);
-                            if (channel != null) {
-                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
-                            }
+                            pool.query("UPDATE `config` SET value = ? WHERE type = ?", [interact.options.getChannel("channel").id, 4]);
+                        } else {
+                            pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [4, interact.options.getChannel("channel").id]);
                         }
+                        interact.reply({
+                            content: lang[config.lang].interact.memberc.cmd.replace("${channel}", interact.options.getChannel("channel")),
+                            ephemeral: true
+                        });
+                        pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    let channel = interact.guild.channels.cache.get(res[0].value);
+                                    if (channel != null) {
+                                        channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
+                                    }
+                                }
+                            });
+                    });
+                break;
+            }
+            case "grantrole": {
+                let role = interact.options.getRole("role");
+                console.log(role.name);
+                interact.guild.members.fetch().then(members => {
+                members.filter(member => member.roles.cache.has(role) && !member.user.bot);
+                    members.forEach(member => {
+                        member.roles.add(role.id);
                     });
                 });
                 break;
