@@ -42,14 +42,14 @@ bot.on('guildMemberAdd', member => {
             }
         });
     pool.query("SELECT * FROM `config` WHERE type = ?", [5])
-    .then(([res]) => {
-        if (res.length != 0) {
-            let role = member.guild.roles.cache.get(res[0].value);
-            if (role != null) {
-                member.roles.add(role);
+        .then(([res]) => {
+            if (res.length != 0) {
+                let role = member.guild.roles.cache.get(res[0].value);
+                if (role != null) {
+                    member.roles.add(role);
+                }
             }
-        }
-    });
+        });
 });
 
 bot.on('guildMemberRemove', member => {
@@ -210,8 +210,8 @@ bot.on("ready", () => {
                             name: "category",
                             description: lang[config.lang].cmds.report.category,
                             type: "CHANNEL",
+                            required: true,
                             channel_types: [4],
-                            required: true
                         }
                     ]
                 }
@@ -232,15 +232,15 @@ bot.on("ready", () => {
                             name: "admin",
                             description: lang[config.lang].cmds.logs.channels.admin,
                             type: "CHANNEL",
-                            channel_types: [0],
-                            required: false
+                            required: false,
+                            channel_types: [0]
                         },
                         {
                             name: "violation",
                             description: lang[config.lang].cmds.logs.channels.violation,
                             type: "CHANNEL",
-                            channel_types: [0],
-                            required: false
+                            required: false,
+                            channel_types: [0]
                         }
                     ]
                 },
@@ -268,8 +268,8 @@ bot.on("ready", () => {
         },
         {
             name: "grantrole",
-            type: "CHAT_INPUT",
             description: lang[config.lang].cmds.grantrole.cmd,
+            type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
@@ -282,14 +282,14 @@ bot.on("ready", () => {
         },
         {
             name: "welcomerole",
-            type: "CHAT_INPUT",
             description: lang[config.lang].cmds.welcomerole.cmd,
+            type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "role",
-                    type: "ROLE",
                     description: lang[config.lang].cmds.welcomerole.role,
+                    type: "ROLE",
                     required: true
                 }
             ]
@@ -775,14 +775,22 @@ bot.on('interactionCreate', async interact => {
                         });
                     }
                 });
+                interact.reply({
+                    content: lang.ru.interact.grantrole.replace("${role}", role),
+                    ephemeral: true
+                });
                 break;
             }
             case "welcomerole": {
                 let role = interact.options.getRole("role");
                 pool.query("SELECT * FROM `config` WHERE type = ?", [5])
-                .then(([res]) => {
-                    if (res.length !=0 ) pool.query("UPDATE `config` SET value = ? WHERE type = ?", [role.id, 5]);
-                    else pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [5, role.id]);
+                    .then(([res]) => {
+                        if (res.length != 0) pool.query("UPDATE `config` SET value = ? WHERE type = ?", [role.id, 5]);
+                        else pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [5, role.id]);
+                    });
+                interact.reply({
+                    content: lang.ru.interact.welcomerole.replace("${role}", role),
+                    ephemeral: true
                 });
                 break;
             }
