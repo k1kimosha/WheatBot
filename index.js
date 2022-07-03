@@ -802,14 +802,15 @@ bot.on('interactionCreate', async interact => {
                     interact.guild.members.fetch()
                         .then(members => {
                             members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
-                                    member.roles.add(role);
+                                member.roles.add(role);
                             });
                         })
-                        .finally(console.log(""));
-                    interact.reply({
-                        content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
-                        ephemeral: true
-                    });
+                        .finally(() => {
+                            interact.reply({
+                                content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
+                                ephemeral: true
+                            });
+                        });
                 } else {
                     interact.reply({
                         content: lang[config.lang].interact.grantrole.err,
