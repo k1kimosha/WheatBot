@@ -75,6 +75,7 @@ bot.on("ready", () => {
                 }
             }
         });
+    console.log(`${bot.user.tag} runned!`);
     bot.application.commands.set([
         {
             name: "mute",
@@ -295,6 +296,9 @@ bot.on("ready", () => {
             ]
         }
     ])
+    .then((cmds) => {
+        console.log(`${cmds.size} command loaded!`);
+    });
 });
 
 //Command block
@@ -304,6 +308,7 @@ bot.on('interactionCreate', async interact => {
         switch (interact.commandName) {
             case "report": {
                 if (interact.options.getSubcommand() == "init") {
+                    console.log(`${interact.user.tag} use /report init`);
                     interact.reply({
                         content: lang[config.lang].interact.report.init.text,
                         components: [
@@ -322,6 +327,7 @@ bot.on('interactionCreate', async interact => {
                         ]
                     });
                 } else if (interact.options.getSubcommand() == "manage") {
+                    console.log(`${interact.user.tag} use /report manage`);
                     let channel = interact.options.getChannel("category");
                     pool.query("SELECT * FROM `config` WHERE type = ?", [0])
                         .then(([res]) => {
@@ -352,6 +358,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "mute": {
+                console.log(`${interact.user.tag} use /mute`);
                 let target = interact.options.getMember("user");
                 let time = interact.options.getNumber("time");
                 let reason = interact.options.getString("reason");
@@ -385,6 +392,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "unmute": {
+                console.log(`${interact.user.tag} use /unmute`);
                 let target = interact.options.getMember("user");
                 if (target.moderatable) {
                     target.timeout(null);
@@ -416,6 +424,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "warn": {
+                console.log(`${interact.user.tag} use /warn`);
                 let target = interact.options.getMember("user");
                 let reason = interact.options.getString("reason");
                 let gived = interact.member.id;
@@ -465,6 +474,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "unwarn": {
+                console.log(`${interact.user.tag} use /unwarn`);
                 let target = interact.options.getMember("user");
                 pool.query("SELECT * FROM `warns` WHERE uuid = ?", [target.id])
                     .then(([res]) => {
@@ -500,6 +510,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "links": {
+                console.log(`${interact.user.tag} use /links`);
                 let add = null;
                 let remove = null;
                 if (interact.options.getString("add") != null) add = interact.options.getString("add").split("/")[interact.options.getString("add").split("/").length - 1];
@@ -584,6 +595,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "words": {
+                console.log(`${interact.user.tag} use /words`);
                 let add = interact.options.getString("add");
                 let remove = interact.options.getString("remove");
                 let p1 = 0, p2 = 0;
@@ -667,6 +679,7 @@ bot.on('interactionCreate', async interact => {
             }
             case "logs": {
                 if (interact.options.getSubcommand() == "channels") {
+                    console.log(`${interact.user.tag} use /logs channels`);
                     let admin = interact.options.getChannel("admin");
                     let violation = interact.options.getChannel("violation");
                     let p1 = 0, p2 = 0;
@@ -710,6 +723,7 @@ bot.on('interactionCreate', async interact => {
                         }
                     }
                 } else if (interact.options.getSubcommand() == "enabled") {
+                    console.log(`${interact.user.tag} use /logs enabled`);
                     pool.query("SELECT * FROM `config` WHERE type = ?", [1])
                         .then(([res]) => {
                             if (res.length != 0) {
@@ -741,6 +755,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "memberc": {
+                console.log(`${interact.user.tag} use /memberc`);
                 pool.query("SELECT * FROM `config` WHERE type = ?", [4])
                     .then(([res]) => {
                         if (res.length != 0) {
@@ -765,6 +780,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "grantrole": {
+                console.log(`${interact.user.tag} use /grantrole`);
                 let role = interact.options.getRole("role");
                 console.log(role.name);
                 interact.guild.members.fetch().then(members => {
@@ -782,6 +798,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "welcomerole": {
+                console.log(`${interact.user.tag} use /welcomerole`);
                 let role = interact.options.getRole("role");
                 pool.query("SELECT * FROM `config` WHERE type = ?", [5])
                     .then(([res]) => {
@@ -802,6 +819,7 @@ bot.on('interactionCreate', async interact => {
 
 bot.on('messageCreate', async msg => {
     if (!msg.author.bot) {
+        console.log(`${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} ${msg.author.tag}: ${msg.content}`);
         if (msg.content.search(/https*:\/\/[db][il1]sc[o0]r[db]\.g[il1][tf][ft]/g) != -1) {
             msg.delete();
         } else if (msg.content.search(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g) != -1) {
