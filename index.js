@@ -39,7 +39,7 @@ bot.on('guildMemberAdd', member => {
                 member.guild.roles.fetch(res[0].value)
                     .then(role => {
                         if (role != null) {
-                            member.roles.add(role);
+                            member.roles.add(role).catch();
                         }
                     });
             }
@@ -802,7 +802,7 @@ bot.on('interactionCreate', async interact => {
                     interact.guild.members.fetch()
                         .then(members => {
                             members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
-                                member.roles.add(role);
+                                member.roles.add(role).catch();
                             });
                         })
                         .finally(() => {
@@ -838,6 +838,89 @@ bot.on('interactionCreate', async interact => {
                         ephemeral: true
                     });
                 }
+                break;
+            }
+        }
+    } else if (interact.isButton()) {
+        switch (interact.customId) {
+            case "reportCreate": {
+                interact.showModal({
+                    title: lang.ru.modals.reportCreate.title,
+                    components: [{
+                        type: "ACTION_ROW",
+                        components: [{
+                            label: lang.ru.modals.reportCreate.theme,
+                            type: "TEXT_INPUT",
+                            style: "SHORT",
+                            customId: "theme",
+                            placeholder: lang.ru.modals.reportCreate.themePlaceholder,
+                            required: true
+                        }]
+                    },
+                    {
+                        type: "ACTION_ROW",
+                        components: [{
+                            label: lang.ru.modals.reportCreate.main,
+                            type: "TEXT_INPUT",
+                            style: "PARAGRAPH",
+                            customId: "main",
+                            placeholder: lang.ru.modals.reportCreate.mainPlaceholder,
+                            required: true
+                        }]
+                    }],
+                    customId: "reportCreate"
+                });
+                break;
+            }
+        }
+    } else if (interact.isModalSubmit()) {
+        switch (interact.customId) {
+            case "reportCreate": {
+                interact.deferReply({ ephemeral: true });
+                pool.query("SELECT * FROM `config`WHERE type = ?", [0])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            interact.guild.channels.fetch(res[0].value).then(category => {
+                                if (category != null) {
+                                    let theme = interact.components[0].components[0].value;
+                                    let main = interact.components[1].components[0].value;
+                                    interact.guild.channels.create(`🟢 ${theme}`, {
+                                        type: "GUILD_TEXT",
+                                        parent: res[0].value,
+                                        permissionOverwrites: [{
+                                            id: interact.guildId,
+                                            deny: ["VIEW_CHANNEL"],
+                                            type: "role"
+                                        }]
+                                    }).then(channel => {
+                                        channel.send({
+                                            embeds: [{
+                                                title: theme,
+                                                description: main,
+                                                color: "#00FFC6"
+                                            }],
+                                            components: [{
+                                                type: "ACTION_ROW",
+                                                components: [
+                                                    {
+                                                        label: lang.ru.modals.reportCreate.reportRun.closeReport,
+                                                        type: "BUTTON",
+                                                        style: "SECONDARY",
+                                                        customId: "closeReport",
+                                                        emoji: '❌'
+                                                    }
+                                                ]
+                                            }]
+                                        });
+
+                                        interact.editReply({
+                                            content: lang.ru.modals.reportCreate.reportRun.cmd.replace("${channel}", channel)
+                                        });
+                                    });
+                                }
+                            })
+                        }
+                    })
                 break;
             }
         }
