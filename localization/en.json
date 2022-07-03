@@ -1,6 +1,5 @@
 {
     "cmds": {
-        "initReport": "Create report button",
         "mute": {
             "cmd": "Temp mute user",
             "user": "The user to be suspended",
@@ -29,33 +28,101 @@
             "cmd": "Manage ban words",
             "add": "Disallow a word",
             "remove": "Allow a word"
+        },
+        "report": {
+            "cmd": "Управление сисемой тикетов",
+            "init": "Создать кнопку репортов",
+            "manage": "Управление прочими настройками",
+            "category": "Категория расположения тикетов"
+        },
+        "logs": {
+            "cmd": "Управление системой логирования",
+            "channels": {
+                "cmd": "Установить каналы для логирования",
+                "admin": "Канал для логов действий администраторов",
+                "violation": "Канал для логов нарушений пользователей"
+            },
+            "enabled": "Включение системы логирования"
+        },
+        "memberc": {
+            "cmd": "Установить канал счётчик участников",
+            "channel": "Канал счётчик"
+        },
+        "grantrole": {
+            "cmd": "Выдать всем роль на сервере",
+            "role": "Роль"
+        },
+        "welcomerole": {
+            "cmd": "Установить роль выдаваемую при входе",
+            "role": "Роль"
         }
     },
     "interact": {
-        "initReport": {
-            "text": "Send a question/complaint/suggestion",
-            "button": "Create ticket"
+        "report": {
+            "init": {
+                "text": "Отправить вопрос/жалобу/предложение",
+                "button": "Создать тикет"
+            },
+            "manage": {
+                "category": "Категория ${channel} задана для хранения репортов",
+                "logs": "Администратор ${admin} установил категорию ${channel} для хранения репортов"
+            }
         },
-        "mute": "User ${target} was suspended for ${time} minut(s).\nReason: ${reason}",
-        "unmute": "User ${target} can communicate again.",
+        "mute": {
+            "success": "Пользователь ${target} был отстранён на ${time} минут(ы).\nПричина: ${reason}",
+            "logs": "Администратор ${admin} отстранил пользователя ${target} на ${time} минут(ы).\nПричина: ${reason}"
+        },
+        "unmute": {
+            "success": "Пользователь ${target} снова может общаться.",
+            "logs": "Администратор ${admin} снял с пользователя ${target} ограничение на общение"
+        },
         "warn": {
             "0": "User ${target} received a his first warning.\nReason: ${reason}",
             "2": "User ${target} received a warning.\nReason: ${reason}",
-            "3": "User ${target} received a warning and was suspended for ${time} minuts.\nReason: ${reason}"
+            "3": "User ${target} received a warning and was suspended for ${time} minuts.\nReason: ${reason}",
+            "logs": "Администратор ${admin} выдал пользователю ${target} предупреждение\nПричина: ${reason}"
         },
         "unwarn": {
             "success": "All warnings have been removed from the user ${target}",
-            "err": "Mistake: the user hasn't warns"
+            "err": "Mistake: the user hasn't warns",
+            "logs": "Администратор ${admin} снял с пользователя ${target} все предупреждения"
         },
         "links": {
             "1": "Link ${link} has been successfully added to the list of allowed",
             "2": "Link ${link} successfully removed from the list of allowed",
-            "3": "Link ${link1} successfully added to the allowed list\nLink ${link 2} successfully removed from the allowed list"
+            "3": "Link ${link1} successfully added to the allowed list\nLink ${link 2} successfully removed from the allowed list",
+            "logs1": "Администратор ${admin} добавил в список разрешённых ссылок ${link}",
+            "logs2": "Администратор ${admin} удалил из списка разрешённых ссылок ${link}",
+            "logs3": "Администратор ${admin} добавил в список разрешённых ссылок ${link1} и удалил ${link2}"
         },
         "words": {
             "1": "Ban word ${word} successfully added to the check list",
             "2": "Ban worc ${word} successfully removed from the check list",
-            "3": "Ban word ${word1} successfully added to the check list\nBan word ${word2} successfully removed from the check list"
+            "3": "Ban word ${word1} successfully added to the check list\nBan word ${word2} successfully removed from the check list",
+            "logs1": "Администратор ${admin} добавил в список проверки ${word}",
+            "logs2": "Администратор ${admin} удалил из списка проверки ${word}",
+            "logs3": "Администратор ${admin} добавил в список проверки ${word1} и удалил ${word2}"
+        },
+        "logs": {
+            "channels": {
+                "1": "Канал ${channel} установлен для логов действий администрации",
+                "2": "Канал ${channel} установлен для логов нарушений пользователей",
+                "3": "Канал ${channel1} установлен для логов действий администрации\nКанал ${channel2} установлен для логов нарушений пользователей"
+            },
+            "enabled": "Система логирования была включена",
+            "disabled": "Система логирования была отключена"
+        },
+        "memberc": {
+            "cmd": "Канал ${channel} установлен как счётчик участников",
+            "channel": "Участников: ${count}"
+        },
+        "grantrole": {
+            "succes": "Бот выдаёт всем роль ${role}",
+            "err": "Бот не может выдать данную роль"
+        },
+        "welcomerole": {
+            "succes": "Роль ${role} будет выдаваться участникам при входе",
+            "err": "Бот не может выдать данную роль"
         }
     },
     "err_not_permission": "Error: insufficient rights",
@@ -63,7 +130,9 @@
     "msg_filter": {
         "warn_link": "User ${target} recived a warning.\nReason: Posting spam links",
         "reason_link": "Posting spam links",
+        "logs_link": "Пользователь ${target} был уличён в размещении спам ссылок",
         "warn_words": "User ${target} recived a warning.\nReason: Using ban word",
-        "reason_words": "Using ban words"
+        "reason_words": "Using ban words",
+        "logs_words": "Пользователь ${target} был уличён в использовании запретных слов"
     }
 }
