@@ -804,8 +804,8 @@ bot.on('interactionCreate', async interact => {
                             members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
                                     member.roles.add(role);
                             });
-                            console.log("==CONGRATULATION==");
-                        });
+                        })
+                        .finally(console.log(""));
                     interact.reply({
                         content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
                         ephemeral: true
