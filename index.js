@@ -296,9 +296,9 @@ bot.on("ready", () => {
             ]
         }
     ])
-    .then((cmds) => {
-        console.log(`${cmds.size} command loaded!`);
-    });
+        .then((cmds) => {
+            console.log(`${cmds.size} command loaded!`);
+        });
 });
 
 //Command block
@@ -782,33 +782,46 @@ bot.on('interactionCreate', async interact => {
             case "grantrole": {
                 console.log(`${interact.user.tag} use /grantrole`);
                 let role = interact.options.getRole("role");
-                console.log(role.name);
-                interact.guild.members.fetch().then(members => {
-                    members.filter(member => member.roles.cache.has(role) && !member.user.bot);
-                    if (members.size != 0) {
-                        members.forEach(member => {
-                            member.roles.add(role.id);
-                        });
-                    }
-                });
-                interact.reply({
-                    content: lang.ru.interact.grantrole.replace("${role}", role),
-                    ephemeral: true
-                });
+                if (role.editable) {
+                    interact.guild.members.fetch().then(members => {
+                        members = members.filter(member => !member.roles.cache.has(role) && !member.user.bot);
+                        if (members.size != 0) {
+                            members.forEach(member => {
+                                member.roles.add(role.id);
+                            });
+                        }
+                    });
+                    interact.reply({
+                        content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
+                        ephemeral: true
+                    });
+                } else {
+                    interact.reply({
+                        content: lang[config.lang].interact.grantrole.err,
+                        ephemeral: true
+                    });
+                }
                 break;
             }
             case "welcomerole": {
                 console.log(`${interact.user.tag} use /welcomerole`);
                 let role = interact.options.getRole("role");
-                pool.query("SELECT * FROM `config` WHERE type = ?", [5])
-                    .then(([res]) => {
-                        if (res.length != 0) pool.query("UPDATE `config` SET value = ? WHERE type = ?", [role.id, 5]);
-                        else pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [5, role.id]);
+                if (role.editable) {
+                    pool.query("SELECT * FROM `config` WHERE type = ?", [5])
+                        .then(([res]) => {
+                            if (res.length != 0) pool.query("UPDATE `config` SET value = ? WHERE type = ?", [role.id, 5]);
+                            else pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [5, role.id]);
+                        });
+                    interact.reply({
+                        content: lang[config.lang].interact.welcomerole.succes.replace("${role}", role),
+                        ephemeral: true
                     });
-                interact.reply({
-                    content: lang.ru.interact.welcomerole.replace("${role}", role),
-                    ephemeral: true
-                });
+                } else {
+                    interact.reply({
+                        content: lang[config.lang].interact.welcomerole.err,
+                        ephemeral: true
+                    });
+                }
                 break;
             }
         }
