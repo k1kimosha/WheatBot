@@ -35,10 +35,12 @@ bot.on('guildMemberAdd', member => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                let channel = member.guild.channels.cache.get(res[0].value);
-                if (channel != null) {
-                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
-                }
+                member.guild.channels.fetch({ id: res[0].value })
+                    .then(channel => {
+                        if (channel != null) {
+                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                        }
+                    });
             }
         });
     pool.query("SELECT * FROM `config` WHERE type = ?", [5])
@@ -56,10 +58,12 @@ bot.on('guildMemberRemove', member => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                let channel = member.guild.channels.cache.get(res[0].value);
-                if (channel != null) {
-                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
-                }
+                member.guild.channels.fetch({ id: res[0].value })
+                    .then(channel => {
+                        if (channel != null) {
+                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                        }
+                    });
             }
         });
 });
@@ -770,10 +774,12 @@ bot.on('interactionCreate', async interact => {
                         pool.query("SELECT * FROM `config` WHERE type = ?", [4])
                             .then(([res]) => {
                                 if (res.length != 0) {
-                                    let channel = interact.guild.channels.cache.get(res[0].value);
-                                    if (channel != null) {
-                                        channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
-                                    }
+                                    interact.guild.channels.fetch({ id: res[0].value })
+                                        .then(channel => {
+                                            if (channel != null) {
+                                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                                            }
+                                        });
                                 }
                             });
                     });
