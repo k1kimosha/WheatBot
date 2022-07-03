@@ -802,7 +802,11 @@ bot.on('interactionCreate', async interact => {
                     interact.guild.members.fetch()
                         .then(members => {
                             members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
-                                if (member.manageable) member.roles.add(role);
+                                try {
+                                    member.roles.add(role);
+                                } catch (error) {
+                                    
+                                }
                             })
                         });
                     interact.reply({
