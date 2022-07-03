@@ -1,0 +1,3 @@
+files:
+  - source: /localization/ru.json
+    translation: /localization/%two_letters_code%.json
