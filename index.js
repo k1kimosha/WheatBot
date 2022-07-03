@@ -802,12 +802,9 @@ bot.on('interactionCreate', async interact => {
                     interact.guild.members.fetch()
                         .then(members => {
                             members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
-                                try {
                                     member.roles.add(role);
-                                } catch (error) {
-                                    
-                                }
-                            })
+                            });
+                            console.log("==CONGRATULATION==");
                         });
                     interact.reply({
                         content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
