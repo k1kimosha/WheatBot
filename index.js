@@ -32,51 +32,61 @@ const pool = createPool({
 bot.login(config.token);
 
 bot.on('guildMemberAdd', member => {
-    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
+    console.log(`${member.user.tag} join`);
+    pool.query("SELECT * FROM `config` WHERE type = ?", [5])
         .then(([res]) => {
             if (res.length != 0) {
-                member.guild.channels.fetch({ id: res[0].value })
-                    .then(channel => {
-                        if (channel != null) {
-                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                member.guild.roles.fetch(res[0].value)
+                    .then(role => {
+                        if (role != null) {
+                            member.roles.add(role);
                         }
                     });
             }
         });
-    pool.query("SELECT * FROM `config` WHERE type = ?", [5])
+    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                let role = member.guild.roles.cache.get(res[0].value);
-                if (role != null) {
-                    member.roles.add(role);
-                }
+                member.guild.channels.fetch(res[0].value)
+                    .then(channel => {
+                        if (channel != null) {
+                            console.log("member count update");
+                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
+                        }
+                    })
             }
-        });
+        })
 });
 
 bot.on('guildMemberRemove', member => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                member.guild.channels.fetch({ id: res[0].value })
+                member.guild.channels.fetch(res[0].value)
                     .then(channel => {
                         if (channel != null) {
-                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                            console.log("member count update");
+                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
                         }
-                    });
+                    })
             }
-        });
-});
+        })
+})
 
 bot.on("ready", () => {
     bot.user.setPresence({ status: "dnd" });
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                let channel = bot.guilds.cache.get(config.guild).channels.cache.get(res[0].value);
-                if (channel != null) {
-                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", bot.guilds.cache.get(config.guild).memberCount))
-                }
+                bot.guilds.fetch(config.guild).then(guild => {
+                    guild.channels.fetch(res[0].value)
+                        .then(channel => {
+                            if (channel != null) {
+                                console.log("member count update");
+                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", guild.memberCount));
+                            }
+                        });
+                });
             }
         });
     console.log(`${bot.user.tag} runned!`);
@@ -774,10 +784,10 @@ bot.on('interactionCreate', async interact => {
                         pool.query("SELECT * FROM `config` WHERE type = ?", [4])
                             .then(([res]) => {
                                 if (res.length != 0) {
-                                    interact.guild.channels.fetch({ id: res[0].value })
+                                    interact.guild.channels.fetch(res[0].value)
                                         .then(channel => {
                                             if (channel != null) {
-                                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount))
+                                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
                                             }
                                         });
                                 }
@@ -789,14 +799,12 @@ bot.on('interactionCreate', async interact => {
                 console.log(`${interact.user.tag} use /grantrole`);
                 let role = interact.options.getRole("role");
                 if (role.editable) {
-                    interact.guild.members.fetch().then(members => {
-                        members = members.filter(member => !member.roles.cache.has(role) && !member.user.bot);
-                        if (members.size != 0) {
-                            members.forEach(member => {
-                                member.roles.add(role.id);
-                            });
-                        }
-                    });
+                    interact.guild.members.fetch()
+                        .then(members => {
+                            members.filter(member => !member.roles.cache.has(role) && !member.user.bot).forEach(member => {
+                                if (member.manageable) member.roles.add(role);
+                            })
+                        });
                     interact.reply({
                         content: lang[config.lang].interact.grantrole.succes.replace("${role}", role),
                         ephemeral: true
