@@ -71,7 +71,37 @@ bot.on('guildMemberRemove', member => {
                     })
             }
         })
-})
+});
+
+setInterval(() => {
+    pool.query("SELECT * FROM `bans`")
+        .then(([res]) => {
+            if (res.length != 0) {
+                res.forEach(ban => {
+                    if (new Date().valueOf() - ban.date > 1000 * 60 * 60 * 24) {
+                        bot.guilds.fetch(config.guild).then(guild => {
+                            guild.members.fetch(ban.uuid).then(target => {
+                                target.ban({
+                                    reason: ban.reason,
+                                    days: 7
+                                });
+                                pool.query("DELETE FROM `bans` WHERE uuid = ?", [ban.uuid]);
+                                console.log(`${target.user.tag} banned`);
+                            });
+                        });
+                    }
+                });
+            }
+        });
+    pool.query("SELECT * FROM `mutes`")
+        .then(([res]) => {
+            if (res.length != 0) {
+                res.forEach(mute => {
+                    if (new Date().valueOf() - mute.date > mute.time) pool.query("DELETE FROM `mutes` WHERE uuid = ?", [mute.uuid]);
+                });
+            }
+        });
+}, 10000);
 
 bot.on("ready", () => {
     bot.user.setPresence({ status: "dnd" });
@@ -333,6 +363,40 @@ bot.on("ready", () => {
                     required: true
                 }
             ]
+        },
+        {
+            name: "ban",
+            description: lang[config.lang].cmds.ban.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "user",
+                    description: lang[config.lang].cmds.ban.user,
+                    type: "USER",
+                    required: true
+                },
+                {
+                    name: "reason",
+                    description: lang[config.lang].cmds.ban.reason,
+                    type: "STRING",
+                    required: true
+                }
+            ]
+        },
+        {
+            name: "unban",
+            description: lang[config.lang].cmds.unban.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "user",
+                    description: lang[config.lang].cmds.unban.user,
+                    type: "USER",
+                    required: true
+                }
+            ]
         }
     ])
         .then((cmds) => {
@@ -451,27 +515,27 @@ bot.on('interactionCreate', async interact => {
                 } else if (interact.options.getSubcommand() == "setsu") {
                     let role = interact.options.getRole("role");
                     pool.query("SELECT * FROM `managers` WHERE role = ?", [role.id])
-                    .then(([res]) => {
-                        if (res.length != 0) {
-                            if (res[0].type == 0) {
-                                pool.query("UPDATE `managers` SET type = ? WHERE role = ?", [1, role.id]);
-                                interact.reply({
-                                    content: lang[config.lang].interact.report.setsu.success.replace("${role}", role),
-                                    ephemeral: true
-                                });
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                if (res[0].type == 0) {
+                                    pool.query("UPDATE `managers` SET type = ? WHERE role = ?", [1, role.id]);
+                                    interact.reply({
+                                        content: lang[config.lang].interact.report.setsu.success.replace("${role}", role),
+                                        ephemeral: true
+                                    });
+                                } else {
+                                    interact.reply({
+                                        content: lang[config.lang].interact.report.setsu.err_already.replace("${role}", role),
+                                        ephemeral: true
+                                    });
+                                }
                             } else {
                                 interact.reply({
-                                    content: lang[config.lang].interact.report.setsu.err_already.replace("${role}", role),
+                                    content: lang[config.lang].interact.report.setsu.err_nothing.replace("${role}", role),
                                     ephemeral: true
                                 });
                             }
-                        } else {
-                            interact.reply({
-                                content: lang[config.lang].interact.report.setsu.err_nothing.replace("${role}", role),
-                                ephemeral: true
-                            });
-                        }
-                    });
+                        });
                 }
                 break;
             }
@@ -485,6 +549,14 @@ bot.on('interactionCreate', async interact => {
                     interact.reply({
                         content: lang[config.lang].interact.mute.success.replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason)
                     });
+                    pool.query("SELECT * FROM `mutes` WHERE uuid = ?", [target.id])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                pool.query("UPDATE `mutes` SET reason = ?, date = ?, time = ?, gived = ? WHERE uuid = ?", [reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
+                            } else {
+                                pool.query("INSERT INTO `mutes` (uuid, reason, date, time, gived) VALUES (?, ?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
+                            }
+                        });
                     pool.query("SELECT * FROM `config`")
                         .then(([res]) => {
                             if (res.length != 0) {
@@ -517,6 +589,12 @@ bot.on('interactionCreate', async interact => {
                     interact.reply({
                         content: lang[config.lang].interact.unmute.success.replace("${target}", target.displayName)
                     });
+                    pool.query("SELECT * FROM `mutes` WHERE uuid = ?", [target.id])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                pool.query("DELETE FROM `mutes` WHERE uuid = ?", [interact.member.id]);
+                            }
+                        });
                     pool.query("SELECT * FROM `config`")
                         .then(([res]) => {
                             if (res.length != 0) {
@@ -550,21 +628,21 @@ bot.on('interactionCreate', async interact => {
                     .then(([res]) => {
                         switch (res.length) {
                             case 0: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
+                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
                                 interact.reply({
                                     content: lang[config.lang].interact.warn[0].replace("${target}", target.displayName).replace("${reason}", reason)
                                 });
                                 break;
                             }
                             case 1: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
+                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
                                 interact.reply({
                                     content: lang[config.lang].interact.warn[2].replace("${target}", target.displayName).replace("${reason}", reason)
                                 });
                                 break;
                             }
                             default: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, gived) VALUES (?, ?, ?)", [target.id, reason, gived]);
+                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
                                 interact.reply({
                                     content: lang[config.lang].interact.warn[3].replace("${target}", target.displayName).replace("${time}", (res.length + 1) * 30).replace("${reason}", reason)
                                 });
@@ -944,6 +1022,47 @@ bot.on('interactionCreate', async interact => {
                 }
                 break;
             }
+            case "ban": {
+                let target = interact.options.getMember("user");
+                let reason = interact.options.getString("reason");
+                pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            interact.reply({
+                                content: lang[config.lang].interact.ban.err,
+                                ephemeral: true
+                            });
+                        } else {
+                            pool.query("INSERT INTO `bans` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), interact.member.id]);
+                            target.timeout(1000 * 60 * 60 * 24, reason);
+                            interact.reply({
+                                content: lang[config.lang].interact.ban.success.replace("${target}", target).replace("${reason}", reason),
+                                ephemeral: false
+                            });
+                        }
+                    });
+                break;
+            }
+            case "unban": {
+                let target = interact.options.getMember("user");
+                pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            pool.query("DELETE FROM `bans` WHERE uuid = ?", [target.id]);
+                            target.timeout(null);
+                            interact.reply({
+                                content: lang[config.lang].interact.unban.succes.replace("${target}", target),
+                                ephemeral: false
+                            });
+                        } else {
+                            interact.reply({
+                                content: lang[config.lang].interact.unban.err,
+                                ephemeral: true
+                            });
+                        }
+                    })
+                break;
+            }
         }
     } else if (interact.isButton()) {
         switch (interact.customId) {
@@ -995,19 +1114,21 @@ bot.on('interactionCreate', async interact => {
                             });
                         }
                     });
-                
-                interact.update({components: [{
-                    type: "ACTION_ROW",
-                    components: [
-                        {
-                            label: lang[config.lang].modals.reportCreate.reportClose.deleteReport,
-                            type: "BUTTON",
-                            style: "DANGER",
-                            customId: "deleteReport",
-                            emoji: "♻"
-                        }
-                    ]
-                }]});
+
+                interact.update({
+                    components: [{
+                        type: "ACTION_ROW",
+                        components: [
+                            {
+                                label: lang[config.lang].modals.reportCreate.reportClose.deleteReport,
+                                type: "BUTTON",
+                                style: "DANGER",
+                                customId: "deleteReport",
+                                emoji: "♻"
+                            }
+                        ]
+                    }]
+                });
                 break;
             }
             case "deleteReport": {
