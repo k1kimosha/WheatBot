@@ -225,8 +225,20 @@ bot.on("ready", () => {
                             name: "category",
                             description: lang[config.lang].cmds.report.category,
                             type: "CHANNEL",
-                            required: true,
+                            required: false,
                             channel_types: [4],
+                        },
+                        {
+                            name: "add_manager",
+                            description: lang.ru.cmds.report.addManager,
+                            type: "ROLE",
+                            required: false
+                        },
+                        {
+                            name: "del_manager",
+                            description: lang.ru.cmds.report.delManager,
+                            type: "ROLE",
+                            required: false
                         }
                     ]
                 }
@@ -343,31 +355,86 @@ bot.on('interactionCreate', async interact => {
                 } else if (interact.options.getSubcommand() == "manage") {
                     console.log(`${interact.user.tag} use /report manage`);
                     let channel = interact.options.getChannel("category");
-                    pool.query("SELECT * FROM `config` WHERE type = ?", [0])
-                        .then(([res]) => {
-                            if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
-                            else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
-                        });
-                    interact.reply({
-                        content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
-                        ephemeral: true
-                    });
-                    pool.query("SELECT * FROM `config`")
-                        .then(([res]) => {
-                            if (res.length != 0) {
-                                let enabled = false;
-                                let admin = null;
-                                res.forEach(item => {
-                                    if (item.type == 1 && item.value == 1) enabled = true;
-                                    if (item.type == 2) admin = item.value;
-                                });
-                                if (enabled && admin != null) {
-                                    interact.guild.channels.cache.get(admin).send({
-                                        content: lang[config.lang].interact.report.manage.logs.replace("${admin}", interact.member.displayName).replace("${channel}", channel),
-                                    });
+                    let add = interact.options.getRole("add_manager");
+                    let del = interact.options.getRole("del_manager");
+                    var p1 = 0, p2 = 0, p3 = 0;
+                    if (channel != null) {
+                        pool.query("SELECT * FROM `config` WHERE type = ?", [0])
+                            .then(([res]) => {
+                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
+                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
+                            });
+                        p1 = 1;
+                    }
+                    if (add != null) {
+                        pool.query("SELECT * FROM `managers` WHERE role = ?", [add.id])
+                            .then(([res]) => {
+                                if (res.length != 0) { }
+                                else {
+                                    pool.query("INSERT INTO `managers` (role) VALUES (?)", [add.id]);
                                 }
-                            }
-                        });
+                            });
+                        p2 = 2;
+                    }
+                    if (del != null) {
+                        pool.query("SELECT * FROM `managers` WHERE role = ?", [del.id])
+                            .then(([res]) => {
+                                if (res.length != 0) {
+                                    pool.query("DELETE FROM `managers` WHERE role = ?", [del.id]);
+                                }
+                            });
+                        p3 = 4;
+                    }
+                    switch (p1 + p2 + p3) {
+                        case 0:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.nothing,
+                                ephemeral: true
+                            });
+                            break;
+                        case 1:
+                            interact.reply({
+                                content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel),
+                                ephemeral: true
+                            });
+                            break;
+                        case 2:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.addManager.replace("${role}", add),
+                                ephemeral: true
+                            });
+                            break;
+                        case 3:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.addManager.replace("${role}", add),
+                                ephemeral: true
+                            });
+                            break;
+                        case 4:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                ephemeral: true
+                            });
+                            break;
+                        case 5:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                ephemeral: true
+                            });
+                            break;
+                        case 6:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.addManager.replace("${role}", add) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                ephemeral: true
+                            });
+                            break;
+                        case 7:
+                            interact.reply({
+                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.addManager.replace("${role}", add) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                ephemeral: true
+                            });
+                            break;
+                    }
                 }
                 break;
             }
@@ -887,11 +954,18 @@ bot.on('interactionCreate', async interact => {
                                     interact.guild.channels.create(`🟢 ${theme}`, {
                                         type: "GUILD_TEXT",
                                         parent: res[0].value,
-                                        permissionOverwrites: [{
-                                            id: interact.guildId,
-                                            deny: ["VIEW_CHANNEL"],
-                                            type: "role"
-                                        }]
+                                        permissionOverwrites: [
+                                            {
+                                                id: interact.guildId,
+                                                deny: ["VIEW_CHANNEL"],
+                                                type: "role"
+                                            },
+                                            {
+                                                id: interact.user.id,
+                                                allow: ["VIEW_CHANNEL"],
+                                                type: "member"
+                                            }
+                                        ]
                                     }).then(channel => {
                                         channel.send({
                                             embeds: [{
