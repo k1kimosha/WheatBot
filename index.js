@@ -230,13 +230,13 @@ bot.on("ready", () => {
                         },
                         {
                             name: "add_manager",
-                            description: lang.ru.cmds.report.addManager,
+                            description: lang[config.lang].cmds.report.addManager,
                             type: "ROLE",
                             required: false
                         },
                         {
                             name: "del_manager",
-                            description: lang.ru.cmds.report.delManager,
+                            description: lang[config.lang].cmds.report.delManager,
                             type: "ROLE",
                             required: false
                         }
@@ -367,20 +367,20 @@ bot.on('interactionCreate', async interact => {
                         p1 = 1;
                     }
                     if (add != null) {
-                        pool.query("SELECT * FROM `managers` WHERE role = ?", [add.id])
+                        pool.query("SELECT * FROM `managers` WHERE role = ? AND type = ?", [add.id, 0])
                             .then(([res]) => {
                                 if (res.length != 0) { }
                                 else {
-                                    pool.query("INSERT INTO `managers` (role) VALUES (?)", [add.id]);
+                                    pool.query("INSERT INTO `managers` (role, type) VALUES (?, ?)", [add.id, 0]);
                                 }
                             });
                         p2 = 2;
                     }
                     if (del != null) {
-                        pool.query("SELECT * FROM `managers` WHERE role = ?", [del.id])
+                        pool.query("SELECT * FROM `managers` WHERE role = ? AND type = ?", [del.id, 0])
                             .then(([res]) => {
                                 if (res.length != 0) {
-                                    pool.query("DELETE FROM `managers` WHERE role = ?", [del.id]);
+                                    pool.query("DELETE FROM `managers` WHERE role = ? AND type = ?", [del.id, 0]);
                                 }
                             });
                         p3 = 4;
@@ -388,7 +388,7 @@ bot.on('interactionCreate', async interact => {
                     switch (p1 + p2 + p3) {
                         case 0:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.nothing,
+                                content: lang[config.lang].interact.report.manage.nothing,
                                 ephemeral: true
                             });
                             break;
@@ -400,37 +400,37 @@ bot.on('interactionCreate', async interact => {
                             break;
                         case 2:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.addManager.replace("${role}", add),
+                                content: lang[config.lang].interact.report.manage.addManager.replace("${role}", add),
                                 ephemeral: true
                             });
                             break;
                         case 3:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.addManager.replace("${role}", add),
+                                content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel) + "\n" + lang[config.lang].interact.report.manage.addManager.replace("${role}", add),
                                 ephemeral: true
                             });
                             break;
                         case 4:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                content: lang[config.lang].interact.report.manage.delManager.replace("${role}", del),
                                 ephemeral: true
                             });
                             break;
                         case 5:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel) + "\n" + lang[config.lang].interact.report.manage.delManager.replace("${role}", del),
                                 ephemeral: true
                             });
                             break;
                         case 6:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.addManager.replace("${role}", add) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                content: lang[config.lang].interact.report.manage.addManager.replace("${role}", add) + "\n" + lang[config.lang].interact.report.manage.delManager.replace("${role}", del),
                                 ephemeral: true
                             });
                             break;
                         case 7:
                             interact.reply({
-                                content: lang.ru.interact.report.manage.category.replace("${channel}", channel) + "\n" + lang.ru.interact.report.manage.addManager.replace("${role}", add) + "\n" + lang.ru.interact.report.manage.delManager.replace("${role}", del),
+                                content: lang[config.lang].interact.report.manage.category.replace("${channel}", channel) + "\n" + lang[config.lang].interact.report.manage.addManager.replace("${role}", add) + "\n" + lang[config.lang].interact.report.manage.delManager.replace("${role}", del),
                                 ephemeral: true
                             });
                             break;
@@ -912,31 +912,52 @@ bot.on('interactionCreate', async interact => {
         switch (interact.customId) {
             case "reportCreate": {
                 interact.showModal({
-                    title: lang.ru.modals.reportCreate.title,
+                    title: lang[config.lang].modals.reportCreate.title,
                     components: [{
                         type: "ACTION_ROW",
                         components: [{
-                            label: lang.ru.modals.reportCreate.theme,
+                            label: lang[config.lang].modals.reportCreate.theme,
                             type: "TEXT_INPUT",
                             style: "SHORT",
                             customId: "theme",
-                            placeholder: lang.ru.modals.reportCreate.themePlaceholder,
+                            placeholder: lang[config.lang].modals.reportCreate.themePlaceholder,
                             required: true
                         }]
                     },
                     {
                         type: "ACTION_ROW",
                         components: [{
-                            label: lang.ru.modals.reportCreate.main,
+                            label: lang[config.lang].modals.reportCreate.main,
                             type: "TEXT_INPUT",
                             style: "PARAGRAPH",
                             customId: "main",
-                            placeholder: lang.ru.modals.reportCreate.mainPlaceholder,
+                            placeholder: lang[config.lang].modals.reportCreate.mainPlaceholder,
                             required: true
                         }]
                     }],
                     customId: "reportCreate"
                 });
+                break;
+            }
+            case "closeReport": {
+                interact.channel.permissionOverwrites.set([{
+                    id: interact.guildId,
+                    type: "role",
+                    deny: ["VIEW_CHANNEL"]
+                }]);
+
+                interact.channel.edit({ name: `🔴 ${interact.channel.name.substring(1)}` });
+
+                pool.query("SELECT * FROM `managers` WHERE type = ?", [1])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            res.forEach(item => {
+                                interact.guild.roles.fetch(item.role).then(role => {
+                                    interact.channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
+                                });
+                            });
+                        }
+                    });
                 break;
             }
         }
@@ -977,7 +998,7 @@ bot.on('interactionCreate', async interact => {
                                                 type: "ACTION_ROW",
                                                 components: [
                                                     {
-                                                        label: lang.ru.modals.reportCreate.reportRun.closeReport,
+                                                        label: lang[config.lang].modals.reportCreate.reportRun.closeReport,
                                                         type: "BUTTON",
                                                         style: "SECONDARY",
                                                         customId: "closeReport",
@@ -987,8 +1008,19 @@ bot.on('interactionCreate', async interact => {
                                             }]
                                         });
 
+                                        pool.query("SELECT * FROM `managers` WHERE type = ?", [0])
+                                            .then(([res]) => {
+                                                if (res.length != 0) {
+                                                    res.forEach(item => {
+                                                        interact.guild.roles.fetch(item.role).then(role => {
+                                                            channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
+                                                        })
+                                                    });
+                                                }
+                                            });
+
                                         interact.editReply({
-                                            content: lang.ru.modals.reportCreate.reportRun.cmd.replace("${channel}", channel)
+                                            content: lang[config.lang].modals.reportCreate.reportRun.cmd.replace("${channel}", channel)
                                         });
                                     });
                                 }
