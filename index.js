@@ -241,6 +241,19 @@ bot.on("ready", () => {
                             required: false
                         }
                     ]
+                },
+                {
+                    name: "setsu",
+                    description: lang[config.lang].cmds.report.setsu,
+                    type: "SUB_COMMAND",
+                    options: [
+                        {
+                            name: "role",
+                            description: lang[config.lang].cmds.report.role,
+                            type: "ROLE",
+                            required: true
+                        }
+                    ]
                 }
             ]
         },
@@ -435,6 +448,30 @@ bot.on('interactionCreate', async interact => {
                             });
                             break;
                     }
+                } else if (interact.options.getSubcommand() == "setsu") {
+                    let role = interact.options.getRole("role");
+                    pool.query("SELECT * FROM `managers` WHERE role = ?", [role.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            if (res[0].type == 0) {
+                                pool.query("UPDATE `managers` SET type = ? WHERE role = ?", [1, role.id]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.report.setsu.success.replace("${role}", role),
+                                    ephemeral: true
+                                });
+                            } else {
+                                interact.reply({
+                                    content: lang[config.lang].interact.report.setsu.err_already.replace("${role}", role),
+                                    ephemeral: true
+                                });
+                            }
+                        } else {
+                            interact.reply({
+                                content: lang[config.lang].interact.report.setsu.err_nothing.replace("${role}", role),
+                                ephemeral: true
+                            });
+                        }
+                    });
                 }
                 break;
             }
@@ -958,6 +995,23 @@ bot.on('interactionCreate', async interact => {
                             });
                         }
                     });
+                
+                interact.update({components: [{
+                    type: "ACTION_ROW",
+                    components: [
+                        {
+                            label: lang[config.lang].modals.reportCreate.reportClose.deleteReport,
+                            type: "BUTTON",
+                            style: "DANGER",
+                            customId: "deleteReport",
+                            emoji: "♻"
+                        }
+                    ]
+                }]});
+                break;
+            }
+            case "deleteReport": {
+                interact.channel.delete();
                 break;
             }
         }

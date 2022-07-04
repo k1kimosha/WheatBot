@@ -14,14 +14,14 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Дамп структуры для таблица nexusbot.ban-words
+-- Дамп структуры для таблица bot.ban-words
 CREATE TABLE IF NOT EXISTS `ban-words` (
   `word` varchar(50) COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Экспортируемые данные не выделены.
 
--- Дамп структуры для таблица nexusbot.config
+-- Дамп структуры для таблица bot.config
 CREATE TABLE IF NOT EXISTS `config` (
   `type` int(11) DEFAULT NULL,
   `value` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL
@@ -29,14 +29,22 @@ CREATE TABLE IF NOT EXISTS `config` (
 
 -- Экспортируемые данные не выделены.
 
--- Дамп структуры для таблица nexusbot.links
+-- Дамп структуры для таблица bot.links
 CREATE TABLE IF NOT EXISTS `links` (
   `link` varchar(50) COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Экспортируемые данные не выделены.
 
--- Дамп структуры для таблица nexusbot.warns
+-- Дамп структуры для таблица bot.managers
+CREATE TABLE IF NOT EXISTS `managers` (
+  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Экспортируемые данные не выделены.
+
+-- Дамп структуры для таблица bot.warns
 CREATE TABLE IF NOT EXISTS `warns` (
   `uuid` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `reason` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
