@@ -8,5 +8,6 @@
         "database":""
     },
     "lang":"",
-    "guild": ""
+    "guild": "",
+    "security": true
 }

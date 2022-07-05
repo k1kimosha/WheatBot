@@ -32,11 +32,19 @@ CREATE TABLE IF NOT EXISTS `ban-words` (
 
 -- Дамп структуры для таблица bot.bans
 CREATE TABLE IF NOT EXISTS `bans` (
-  `uuid` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `reason` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `date` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `gived` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `uuid` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `reason` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `date` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `gived` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Экспортируемые данные не выделены.
+
+-- Дамп структуры для таблица bot.codes
+CREATE TABLE IF NOT EXISTS `codes` (
+  `uuid` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `code` varchar(50) COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Экспортируемые данные не выделены.
@@ -58,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `links` (
 
 -- Дамп структуры для таблица bot.managers
 CREATE TABLE IF NOT EXISTS `managers` (
-  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `type` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 

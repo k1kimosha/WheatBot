@@ -641,7 +641,7 @@ bot.on('interactionCreate', async interact => {
                 console.log(`${interact.user.tag} use /mute`);
                 pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 0])
                     .then(([res]) => {
-                        if (res.length < 3) {
+                        if (res.length < 3 || !config.security) {
                             let target = interact.options.getMember("user");
                             let time = interact.options.getNumber("time");
                             let reason = interact.options.getString("reason");
@@ -743,7 +743,7 @@ bot.on('interactionCreate', async interact => {
                 console.log(`${interact.user.tag} use /warn`);
                 pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 1])
                     .then(([res]) => {
-                        if (res.length < 3) {
+                        if (res.length < 3 || !config.security) {
                             let target = interact.options.getMember("user");
                             let reason = interact.options.getString("reason");
                             let gived = interact.member.id;
@@ -1158,7 +1158,7 @@ bot.on('interactionCreate', async interact => {
                 console.log(`${interact.user.tag} use /ban`);
                 pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 2])
                     .then(([res]) => {
-                        if (res.length < 3) {
+                        if (res.length < 3 || !config.security) {
                             let target = interact.options.getMember("user");
                             let reason = interact.options.getString("reason");
                             pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
@@ -1290,6 +1290,7 @@ bot.on('interactionCreate', async interact => {
             }
             case "code": {
                 if (interact.options.getSubcommand() == "channel") {
+                    console.log(`${interact.user.tag} use /code channel`);
                     let channel = interact.options.getChannel("channel");
                     pool.query("SELECT * FROM `config` WHERE type = ?", [6])
                         .then(([res]) => {
@@ -1308,6 +1309,7 @@ bot.on('interactionCreate', async interact => {
                             }
                         });
                 } else if (interact.options.getSubcommand() == "activate") {
+                    console.log(`${interact.user.tag} use /code activate`);
                     let code = interact.options.getString("code").toUpperCase();
                     pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
                         .then(([res]) => {
