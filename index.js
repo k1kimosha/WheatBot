@@ -397,8 +397,22 @@ bot.on("ready", () => {
                     required: true
                 }
             ]
+        },
+        {
+            name: "undo",
+            description: lang.ru.cmds.undo.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "user",
+                    description: lang.ru.cmds.undo.user,
+                    type: "USER",
+                    required: true
+                }
+            ]
         }
-    ])
+    ], config.guild)
         .then((cmds) => {
             console.log(`${cmds.size} command loaded!`);
         });
@@ -1039,6 +1053,22 @@ bot.on('interactionCreate', async interact => {
                                 content: lang[config.lang].interact.ban.success.replace("${target}", target).replace("${reason}", reason),
                                 ephemeral: false
                             });
+                            pool.query("SELECT * FROM `config`")
+                                .then(([res]) => {
+                                    if (res.length != 0) {
+                                        let enabled = false;
+                                        let admin = null;
+                                        res.forEach(item => {
+                                            if (item.type == 1 && item.value == 1) enabled = true;
+                                            if (item.type == 2) admin = item.value;
+                                        });
+                                        if (enabled && admin != null) {
+                                            interact.guild.channels.cache.get(admin).send({
+                                                content: lang[config.lang].interact.ban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
+                                            });
+                                        }
+                                    }
+                                });
                         }
                     });
                 break;
@@ -1054,6 +1084,22 @@ bot.on('interactionCreate', async interact => {
                                 content: lang[config.lang].interact.unban.succes.replace("${target}", target),
                                 ephemeral: false
                             });
+                            pool.query("SELECT * FROM `config`")
+                                .then(([res]) => {
+                                    if (res.length != 0) {
+                                        let enabled = false;
+                                        let admin = null;
+                                        res.forEach(item => {
+                                            if (item.type == 1 && item.value == 1) enabled = true;
+                                            if (item.type == 2) admin = item.value;
+                                        });
+                                        if (enabled && admin != null) {
+                                            interact.guild.channels.cache.get(admin).send({
+                                                content: lang[config.lang].interact.unban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
+                                            });
+                                        }
+                                    }
+                                });
                         } else {
                             interact.reply({
                                 content: lang[config.lang].interact.unban.err,
@@ -1061,6 +1107,42 @@ bot.on('interactionCreate', async interact => {
                             });
                         }
                     })
+                break;
+            }
+            case "undo": {
+                let target = interact.options.getMember("admin");
+                pool.query("SELECT * FROM `bans` WHERE gived = ?", [target.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            res.forEach(ban => {
+                                if (new Date().valueOf() - ban.date < 1000 * 60 * 60 * 24) interact.guild.members.fetch(ban.uuid).then(member => member.timeout(null));
+                            });
+                            pool.query("DELETE FROM `bans`WHERE uuid = ?", [ban.uuid]);
+                        }
+                    });
+                pool.query("SELECT * FROM `warns` WHERE gived = ?", [target.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            res.forEach(warn => {
+                                if (new Date().valueOf() - warn.date < 1000 * 60 * 60 * 24) pool.query("DELETE FROM `warns` WHERE uuid = ? AND date = ?", [warn.uuid, warn.date]);
+                            });
+                        }
+                    });
+                pool.query("SELECT * FROM `mutes` WHERE gived = ?", [target.id])
+                    .then(([res]) => {
+                        if (res.length != 0) {
+                            res.forEach(mute => {
+                                if (new Date().valueOf() - mute.date < 1000 * 60 * 60 * 24) {
+                                    pool.query("DELETE FROM `mutes` WHERE uuid = ?", [mute.uuid]);
+                                    interact.guild.members.fetch(mute.uuid).then(member => member.timeout(null));
+                                }
+                            })
+                        }
+                    })
+                interact.reply({
+                    content: "",
+                    ephemeral: true
+                });
                 break;
             }
         }
