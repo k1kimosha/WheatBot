@@ -73,6 +73,16 @@ bot.on('guildMemberRemove', member => {
         })
 });
 
+function gencode() {
+    let ln = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        let k = Math.floor(Math.random() * 36);
+        code += ln[k];
+    }
+    return code;
+}
+
 setInterval(() => {
     pool.query("SELECT * FROM `bans`")
         .then(([res]) => {
@@ -108,6 +118,35 @@ setInterval(() => {
             if (res.length != 0) {
                 res.forEach(action => {
                     if (new Date().valueOf() - action.date > 1000 * 60 * 15) pool.query("DELETE FROM `actions` WHERE uuid = ? AND type = ? AND date = ?", [action.uuid, action.type, action.date]);
+                });
+            }
+        });
+    pool.query("SELECT * FROM `codes`")
+        .then(([res]) => {
+            if (res.length != 0) {
+                res.forEach(code => {
+                    pool.query("SELECT * FROM `actions` WHERE uuid = ?", [code.uuid])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                var mute = 0, warn = 0, ban = 0;
+                                res.forEach(action => {
+                                    switch (action.type) {
+                                        case 0:
+                                            mute++;
+                                            break;
+                                        case 1:
+                                            warn++;
+                                            break;
+                                        case 2:
+                                            ban++;
+                                            break;
+                                    }
+                                });
+                                if (mute < 3 && warn < 3 && ban < 3) pool.query("DELETE FROM `codes` WHERE uuid = ?", [code.uuid]);
+                            } else {
+                                pool.query("DELETE FROM `codes` WHERE uuid = ?", [code.uuid]);
+                            }
+                        });
                 });
             }
         });
@@ -410,15 +449,50 @@ bot.on("ready", () => {
         },
         {
             name: "undo",
-            description: lang.ru.cmds.undo.cmd,
+            description: lang[config.lang].cmds.undo.cmd,
             type: "CHAT_INPUT",
             defaultPermission: false,
             options: [
                 {
                     name: "user",
-                    description: lang.ru.cmds.undo.user,
+                    description: lang[config.lang].cmds.undo.user,
                     type: "USER",
                     required: true
+                }
+            ]
+        },
+        {
+            name: "code",
+            description: lang[config.lang].cmds.code.cmd,
+            type: "CHAT_INPUT",
+            defaultPermission: false,
+            options: [
+                {
+                    name: "channel",
+                    description: lang[config.lang].cmds.code.channel.cmd,
+                    type: "SUB_COMMAND",
+                    options: [
+                        {
+                            name: "channel",
+                            description: lang[config.lang].cmds.code.channel.channel,
+                            type: "CHANNEL",
+                            required: true,
+                            channel_types: [0]
+                        }
+                    ]
+                },
+                {
+                    name: "activate",
+                    description: lang[config.lang].cmds.code.activate.cmd,
+                    type: "SUB_COMMAND",
+                    options: [
+                        {
+                            name: "code",
+                            description: lang[config.lang].cmds.code.activate.code,
+                            type: "STRING",
+                            required: true
+                        }
+                    ]
                 }
             ]
         }
@@ -608,8 +682,19 @@ bot.on('interactionCreate', async interact => {
                                 });
                             }
                         } else {
+                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                                .then(([res]) => {
+                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
+                                        .then(([code]) => {
+                                            if (res.length != 0 && code.length == 0) {
+                                                let cod = gencode();
+                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
+                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
+                                            }
+                                        })
+                                })
                             interact.reply({
-                                content: lang.ru.interact.mute.security,
+                                content: lang[config.lang].interact.mute.security,
                                 ephemeral: true
                             });
                         }
@@ -707,8 +792,19 @@ bot.on('interactionCreate', async interact => {
                                 });
                             pool.query("INSERT INTO `actions` (uuid, type, date) VALUES (?, ?, ?)", [interact.member.id, 1, new Date().valueOf()]);
                         } else {
+                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                                .then(([res]) => {
+                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
+                                        .then(([code]) => {
+                                            if (res.length != 0 && code.length == 0) {
+                                                let cod = gencode();
+                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
+                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
+                                            }
+                                        })
+                                })
                             interact.reply({
-                                content: lang.ru.interact.warn.security,
+                                content: lang[config.lang].interact.warn.security,
                                 ephemeral: true
                             });
                         }
@@ -1099,8 +1195,19 @@ bot.on('interactionCreate', async interact => {
                                     }
                                 });
                         } else {
+                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                                .then(([res]) => {
+                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
+                                        .then(([code]) => {
+                                            if (res.length != 0 && code.length == 0) {
+                                                let cod = gencode();
+                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
+                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
+                                            }
+                                        })
+                                })
                             interact.reply({
-                                content: lang.ru.interact.ban.security,
+                                content: lang[config.lang].interact.ban.security,
                                 ephemeral: true
                             });
                         }
@@ -1176,10 +1283,56 @@ bot.on('interactionCreate', async interact => {
                         }
                     });
                 interact.reply({
-                    content: lang.ru.interact.undo.replace("${target}", target),
+                    content: lang[config.lang].interact.undo.replace("${target}", target),
                     ephemeral: true
                 });
                 break;
+            }
+            case "code": {
+                if (interact.options.getSubcommand() == "channel") {
+                    let channel = interact.options.getChannel("channel");
+                    pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 6]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.code.channel,
+                                    ephemeral: true
+                                });
+                            } else {
+                                pool.query("INSERT INTO `config` (value, type) VALUES (?, ?)", [channel.id, 6]);
+                                interact.reply({
+                                    content: lang[config.lang].interact.code.channel,
+                                    ephemeral: true
+                                });
+                            }
+                        });
+                } else if (interact.options.getSubcommand() == "activate") {
+                    let code = interact.options.getString("code").toUpperCase();
+                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
+                        .then(([res]) => {
+                            if (res.length != 0) {
+                                if (res[0].code == code) {
+                                    pool.query("DELETE FROM `actions` WHERE uuid = ?", [interact.member.id]);
+                                    pool.query("DELETE FROM `codes` WHERE uuid = ?", [interact.member.id]);
+                                    interact.reply({
+                                        content: lang[config.lang].interact.code.activate.success,
+                                        ephemeral: true
+                                    });
+                                } else {
+                                    interact.reply({
+                                        content: lang[config.lang].interact.code.activate.err_valid,
+                                        ephemeral: true
+                                    });
+                                }
+                            } else {
+                                interact.reply({
+                                    content: lang[config.lang].interact.code.activate.err_nothing,
+                                    ephemeral: true
+                                });
+                            }
+                        })
+                }
             }
         }
     } else if (interact.isButton()) {
@@ -1277,7 +1430,7 @@ bot.on('interactionCreate', async interact => {
                                                 type: "role"
                                             },
                                             {
-                                                id: interact.user.id,
+                                                id: interact.member.id,
                                                 allow: ["VIEW_CHANNEL"],
                                                 type: "member"
                                             }
@@ -1343,7 +1496,7 @@ bot.on('messageCreate', async msg => {
                 .then(([res]) => {
                     if (res.length == 0) {
                         msg.channel.send({
-                            content: lang[config.lang].msg_filter.warn_link.replace("${target}", msg.author.username)
+                            content: lang[config.lang].msg_filter.warn_link.replace("${target}", msg.author.membername)
                         });
                         let target = msg.member;
                         let reason = lang[config.lang].msg_filter.reason_link;
@@ -1397,7 +1550,7 @@ bot.on('messageCreate', async msg => {
                         });
                         if (check == 1) {
                             msg.channel.send({
-                                content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.username)
+                                content: lang[config.lang].msg_filter.warn_words.replace("${target}", msg.author.membername)
                             });
                             let target = msg.member;
                             let reason = lang[config.lang].msg_filter.reason_words;
