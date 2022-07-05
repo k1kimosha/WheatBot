@@ -14,6 +14,15 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+-- Дамп структуры для таблица bot.actions
+CREATE TABLE IF NOT EXISTS `actions` (
+  `uuid` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `type` int(11) NOT NULL,
+  `date` varchar(50) COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Экспортируемые данные не выделены.
+
 -- Дамп структуры для таблица bot.ban-words
 CREATE TABLE IF NOT EXISTS `ban-words` (
   `word` varchar(50) COLLATE utf8_unicode_ci NOT NULL

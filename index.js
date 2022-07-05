@@ -103,6 +103,14 @@ setInterval(() => {
                 });
             }
         });
+    pool.query("SELECT * FROM `actions`")
+        .then(([res]) => {
+            if (res.length != 0) {
+                res.forEach(action => {
+                    if (new Date().valueOf() - action.date > 1000 * 60 * 15) pool.query("DELETE FROM `actions` WHERE uuid = ? AND type = ? AND date = ?", [action.uuid, action.type, action.date]);
+                });
+            }
+        });
 }, 10000);
 
 bot.on("ready", () => {
@@ -557,44 +565,55 @@ bot.on('interactionCreate', async interact => {
             }
             case "mute": {
                 console.log(`${interact.user.tag} use /mute`);
-                let target = interact.options.getMember("user");
-                let time = interact.options.getNumber("time");
-                let reason = interact.options.getString("reason");
-                if (target.moderatable) {
-                    target.timeout(time * 60 * 1000, reason);
-                    interact.reply({
-                        content: lang[config.lang].interact.mute.success.replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason)
-                    });
-                    pool.query("SELECT * FROM `mutes` WHERE uuid = ?", [target.id])
-                        .then(([res]) => {
-                            if (res.length != 0) {
-                                pool.query("UPDATE `mutes` SET reason = ?, date = ?, time = ?, gived = ? WHERE uuid = ?", [reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
-                            } else {
-                                pool.query("INSERT INTO `mutes` (uuid, reason, date, time, gived) VALUES (?, ?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
-                            }
-                        });
-                    pool.query("SELECT * FROM `config`")
-                        .then(([res]) => {
-                            if (res.length != 0) {
-                                let enabled = false;
-                                let admin = null;
-                                res.forEach(item => {
-                                    if (item.type == 1 && item.value == 1) enabled = true;
-                                    if (item.type == 2) admin = item.value;
+                pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 0])
+                    .then(([res]) => {
+                        if (res.length < 3) {
+                            let target = interact.options.getMember("user");
+                            let time = interact.options.getNumber("time");
+                            let reason = interact.options.getString("reason");
+                            if (target.moderatable) {
+                                target.timeout(time * 60 * 1000, reason);
+                                interact.reply({
+                                    content: lang[config.lang].interact.mute.success.replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason)
                                 });
-                                if (enabled && admin != null) {
-                                    interact.guild.channels.cache.get(admin).send({
-                                        content: lang[config.lang].interact.mute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason),
+                                pool.query("SELECT * FROM `mutes` WHERE uuid = ?", [target.id])
+                                    .then(([res]) => {
+                                        if (res.length != 0) {
+                                            pool.query("UPDATE `mutes` SET reason = ?, date = ?, time = ?, gived = ? WHERE uuid = ?", [reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
+                                        } else {
+                                            pool.query("INSERT INTO `mutes` (uuid, reason, date, time, gived) VALUES (?, ?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), time * 60 * 1000, interact.member.id]);
+                                        }
                                     });
-                                }
+                                pool.query("SELECT * FROM `config`")
+                                    .then(([res]) => {
+                                        if (res.length != 0) {
+                                            let enabled = false;
+                                            let admin = null;
+                                            res.forEach(item => {
+                                                if (item.type == 1 && item.value == 1) enabled = true;
+                                                if (item.type == 2) admin = item.value;
+                                            });
+                                            if (enabled && admin != null) {
+                                                interact.guild.channels.cache.get(admin).send({
+                                                    content: lang[config.lang].interact.mute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason),
+                                                });
+                                            }
+                                        }
+                                    });
+                                pool.query("INSERT INTO `actions` (uuid, type, date) VALUES (?, ?, ?)", [interact.member.id, 0, new Date().valueOf()]);
+                            } else {
+                                interact.reply({
+                                    content: lang[config.lang].err_not_permission,
+                                    ephemeral: true
+                                });
                             }
-                        });
-                } else {
-                    interact.reply({
-                        content: lang[config.lang].err_not_permission,
-                        ephemeral: true
+                        } else {
+                            interact.reply({
+                                content: lang.ru.interact.mute.security,
+                                ephemeral: true
+                            });
+                        }
                     });
-                }
                 break;
             }
             case "unmute": {
@@ -637,50 +656,61 @@ bot.on('interactionCreate', async interact => {
             }
             case "warn": {
                 console.log(`${interact.user.tag} use /warn`);
-                let target = interact.options.getMember("user");
-                let reason = interact.options.getString("reason");
-                let gived = interact.member.id;
-                pool.query("SELECT * FROM `warns` WHERE uuid = ?", [target.id])
+                pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 1])
                     .then(([res]) => {
-                        switch (res.length) {
-                            case 0: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
-                                interact.reply({
-                                    content: lang[config.lang].interact.warn[0].replace("${target}", target.displayName).replace("${reason}", reason)
+                        if (res.length < 3) {
+                            let target = interact.options.getMember("user");
+                            let reason = interact.options.getString("reason");
+                            let gived = interact.member.id;
+                            pool.query("SELECT * FROM `warns` WHERE uuid = ?", [target.id])
+                                .then(([res]) => {
+                                    switch (res.length) {
+                                        case 0: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
+                                            interact.reply({
+                                                content: lang[config.lang].interact.warn[0].replace("${target}", target.displayName).replace("${reason}", reason)
+                                            });
+                                            break;
+                                        }
+                                        case 1: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
+                                            interact.reply({
+                                                content: lang[config.lang].interact.warn[2].replace("${target}", target.displayName).replace("${reason}", reason)
+                                            });
+                                            break;
+                                        }
+                                        default: {
+                                            pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
+                                            interact.reply({
+                                                content: lang[config.lang].interact.warn[3].replace("${target}", target.displayName).replace("${time}", (res.length + 1) * 30).replace("${reason}", reason)
+                                            });
+                                            if (target.moderatable) target.timeout((res.length + 1) * 30 * 60 * 1000, lang[config.lang].warn_timeout);
+                                            break;
+                                        }
+                                    }
                                 });
-                                break;
-                            }
-                            case 1: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
-                                interact.reply({
-                                    content: lang[config.lang].interact.warn[2].replace("${target}", target.displayName).replace("${reason}", reason)
+                            pool.query("SELECT * FROM `config`")
+                                .then(([res]) => {
+                                    if (res.length != 0) {
+                                        let enabled = false;
+                                        let admin = null;
+                                        res.forEach(item => {
+                                            if (item.type == 1 && item.value == 1) enabled = true;
+                                            if (item.type == 2) admin = item.value;
+                                        });
+                                        if (enabled && admin != null) {
+                                            interact.guild.channels.cache.get(admin).send({
+                                                content: lang[config.lang].interact.warn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
+                                            });
+                                        }
+                                    }
                                 });
-                                break;
-                            }
-                            default: {
-                                pool.query("INSERT INTO `warns` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), gived]);
-                                interact.reply({
-                                    content: lang[config.lang].interact.warn[3].replace("${target}", target.displayName).replace("${time}", (res.length + 1) * 30).replace("${reason}", reason)
-                                });
-                                if (target.moderatable) target.timeout((res.length + 1) * 30 * 60 * 1000, lang[config.lang].warn_timeout);
-                                break;
-                            }
-                        }
-                    });
-                pool.query("SELECT * FROM `config`")
-                    .then(([res]) => {
-                        if (res.length != 0) {
-                            let enabled = false;
-                            let admin = null;
-                            res.forEach(item => {
-                                if (item.type == 1 && item.value == 1) enabled = true;
-                                if (item.type == 2) admin = item.value;
+                            pool.query("INSERT INTO `actions` (uuid, type, date) VALUES (?, ?, ?)", [interact.member.id, 1, new Date().valueOf()]);
+                        } else {
+                            interact.reply({
+                                content: lang.ru.interact.warn.security,
+                                ephemeral: true
                             });
-                            if (enabled && admin != null) {
-                                interact.guild.channels.cache.get(admin).send({
-                                    content: lang[config.lang].interact.warn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
-                                });
-                            }
                         }
                     });
                 break;
@@ -1029,43 +1059,56 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "ban": {
-                let target = interact.options.getMember("user");
-                let reason = interact.options.getString("reason");
-                pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
+                console.log(`${interact.user.tag} use /ban`);
+                pool.query("SELECT * FROM `actions` WHERE uuid = ? AND type = ?", [interact.member.id, 2])
                     .then(([res]) => {
-                        if (res.length != 0) {
-                            interact.reply({
-                                content: lang[config.lang].interact.ban.err,
-                                ephemeral: true
-                            });
-                        } else {
-                            pool.query("INSERT INTO `bans` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), interact.member.id]);
-                            target.timeout(1000 * 60 * 60 * 24, reason);
-                            interact.reply({
-                                content: lang[config.lang].interact.ban.success.replace("${target}", target).replace("${reason}", reason),
-                                ephemeral: false
-                            });
-                            pool.query("SELECT * FROM `config`")
+                        if (res.length < 3) {
+                            let target = interact.options.getMember("user");
+                            let reason = interact.options.getString("reason");
+                            pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
                                 .then(([res]) => {
                                     if (res.length != 0) {
-                                        let enabled = false;
-                                        let admin = null;
-                                        res.forEach(item => {
-                                            if (item.type == 1 && item.value == 1) enabled = true;
-                                            if (item.type == 2) admin = item.value;
+                                        interact.reply({
+                                            content: lang[config.lang].interact.ban.err,
+                                            ephemeral: true
                                         });
-                                        if (enabled && admin != null) {
-                                            interact.guild.channels.cache.get(admin).send({
-                                                content: lang[config.lang].interact.ban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
+                                    } else {
+                                        pool.query("INSERT INTO `bans` (uuid, reason, date, gived) VALUES (?, ?, ?, ?)", [target.id, reason, new Date().valueOf(), interact.member.id]);
+                                        target.timeout(1000 * 60 * 60 * 24, reason);
+                                        interact.reply({
+                                            content: lang[config.lang].interact.ban.success.replace("${target}", target).replace("${reason}", reason),
+                                            ephemeral: false
+                                        });
+                                        pool.query("SELECT * FROM `config`")
+                                            .then(([res]) => {
+                                                if (res.length != 0) {
+                                                    let enabled = false;
+                                                    let admin = null;
+                                                    res.forEach(item => {
+                                                        if (item.type == 1 && item.value == 1) enabled = true;
+                                                        if (item.type == 2) admin = item.value;
+                                                    });
+                                                    if (enabled && admin != null) {
+                                                        interact.guild.channels.cache.get(admin).send({
+                                                            content: lang[config.lang].interact.ban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
+                                                        });
+                                                    }
+                                                }
                                             });
-                                        }
+                                        pool.query("INSERT INTO `actions` (uuid, type, date) VALUES (?, ?, ?)", [interact.member.id, 2, new Date().valueOf()]);
                                     }
                                 });
+                        } else {
+                            interact.reply({
+                                content: lang.ru.interact.ban.security,
+                                ephemeral: true
+                            });
                         }
                     });
                 break;
             }
             case "unban": {
+                console.log(`${interact.user.tag} use /unban`);
                 let target = interact.options.getMember("user");
                 pool.query("SELECT * FROM `bans` WHERE uuid = ?", [target.id])
                     .then(([res]) => {
@@ -1102,6 +1145,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "undo": {
+                console.log(`${interact.user.tag} use /undo`);
                 let target = interact.options.getMember("user");
                 pool.query("SELECT * FROM `bans` WHERE gived = ?", [target.id])
                     .then(([res]) => {
