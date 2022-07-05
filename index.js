@@ -36,24 +36,24 @@ bot.on('guildMemberAdd', member => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [5])
         .then(([res]) => {
             if (res.length != 0) {
-                member.guild.roles.fetch(res[0].value)
-                    .then(role => {
-                        if (role != null) {
+                if (member.guild.roles.resolve(res[0].value) != null) {
+                    member.guild.roles.fetch(res[0].value)
+                        .then(role => {
                             member.roles.add(role).catch();
-                        }
-                    });
+                        });
+                }
             }
         });
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                member.guild.channels.fetch(res[0].value)
-                    .then(channel => {
-                        if (channel != null) {
+                if (member.guild.channels.resolve(res[0].value) != null) {
+                    member.guild.channels.fetch(res[0].value)
+                        .then(channel => {
                             console.log("member count update");
                             channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
-                        }
-                    })
+                        })
+                }
             }
         })
 });
@@ -62,13 +62,13 @@ bot.on('guildMemberRemove', member => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                member.guild.channels.fetch(res[0].value)
-                    .then(channel => {
-                        if (channel != null) {
+                if (member.guild.channels.resolve(res[0].value) != null) {
+                    member.guild.channels.fetch(res[0].value)
+                        .then(channel => {
                             console.log("member count update");
                             channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
-                        }
-                    })
+                        })
+                }
             }
         })
 });
@@ -80,14 +80,16 @@ setInterval(() => {
                 res.forEach(ban => {
                     if (new Date().valueOf() - ban.date > 1000 * 60 * 60 * 24) {
                         bot.guilds.fetch(config.guild).then(guild => {
-                            guild.members.fetch(ban.uuid).then(target => {
-                                target.ban({
-                                    reason: ban.reason,
-                                    days: 7
+                            if (guild.members.resolve(ban.uuid) != null) {
+                                guild.members.fetch(ban.uuid).then(target => {
+                                    target.ban({
+                                        reason: ban.reason,
+                                        days: 7
+                                    });
+                                    pool.query("DELETE FROM `bans` WHERE uuid = ?", [ban.uuid]);
+                                    console.log(`${target.user.tag} banned`);
                                 });
-                                pool.query("DELETE FROM `bans` WHERE uuid = ?", [ban.uuid]);
-                                console.log(`${target.user.tag} banned`);
-                            });
+                            }
                         });
                     }
                 });
@@ -109,13 +111,13 @@ bot.on("ready", () => {
         .then(([res]) => {
             if (res.length != 0) {
                 bot.guilds.fetch(config.guild).then(guild => {
-                    guild.channels.fetch(res[0].value)
-                        .then(channel => {
-                            if (channel != null) {
+                    if (guild.channels.resolve(res[0].value) != null) {
+                        guild.channels.fetch(res[0].value)
+                            .then(channel => {
                                 console.log("member count update");
                                 channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", guild.memberCount));
-                            }
-                        });
+                            });
+                    }
                 });
             }
         });
@@ -977,17 +979,7 @@ bot.on('interactionCreate', async interact => {
                             content: lang[config.lang].interact.memberc.cmd.replace("${channel}", interact.options.getChannel("channel")),
                             ephemeral: true
                         });
-                        pool.query("SELECT * FROM `config` WHERE type = ?", [4])
-                            .then(([res]) => {
-                                if (res.length != 0) {
-                                    interact.guild.channels.fetch(res[0].value)
-                                        .then(channel => {
-                                            if (channel != null) {
-                                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount))
-                                            }
-                                        });
-                                }
-                            });
+                        interact.options.getChannel("channel").setName(lang[config.lang].interact.memberc.channel.replace("${count}", interact.guild.memberCount));
                     });
                 break;
             }
@@ -1115,7 +1107,7 @@ bot.on('interactionCreate', async interact => {
                     .then(([res]) => {
                         if (res.length != 0) {
                             res.forEach(ban => {
-                                if (new Date().valueOf() - ban.date < 1000 * 60 * 60 * 24) interact.guild.members.fetch(ban.uuid).then(member => member.timeout(null));
+                                if (new Date().valueOf() - ban.date < 1000 * 60 * 60 * 24) if (interact.guild.members.resolve(ban.uuid) != null) interact.guild.members.fetch(ban.uuid).then(member => member.timeout(null));
                             });
                             pool.query("DELETE FROM `bans`WHERE uuid = ?", [ban.uuid]);
                         }
@@ -1134,11 +1126,11 @@ bot.on('interactionCreate', async interact => {
                             res.forEach(mute => {
                                 if (new Date().valueOf() - mute.date < 1000 * 60 * 60 * 24) {
                                     pool.query("DELETE FROM `mutes` WHERE uuid = ?", [mute.uuid]);
-                                    interact.guild.members.fetch(mute.uuid).then(member => member.timeout(null));
+                                    if (interact.guild.members.resolve(mute.uuid) != null) interact.guild.members.fetch(mute.uuid).then(member => member.timeout(null));
                                 }
-                            })
+                            });
                         }
-                    })
+                    });
                 interact.reply({
                     content: lang.ru.interact.undo.replace("${target}", target),
                     ephemeral: true
@@ -1190,9 +1182,11 @@ bot.on('interactionCreate', async interact => {
                     .then(([res]) => {
                         if (res.length != 0) {
                             res.forEach(item => {
-                                interact.guild.roles.fetch(item.role).then(role => {
-                                    interact.channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
-                                });
+                                if (interact.guild.roles.resolve(item.role)) {
+                                    interact.guild.roles.fetch(item.role).then(role => {
+                                        interact.channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
+                                    });
+                                }
                             });
                         }
                     });
@@ -1225,8 +1219,8 @@ bot.on('interactionCreate', async interact => {
                 pool.query("SELECT * FROM `config`WHERE type = ?", [0])
                     .then(([res]) => {
                         if (res.length != 0) {
-                            interact.guild.channels.fetch(res[0].value).then(category => {
-                                if (category != null) {
+                            if (interact.guild.channels.resolve(res[0].value) != null) {
+                                interact.guild.channels.fetch(res[0].value).then(category => {
                                     let theme = interact.components[0].components[0].value;
                                     let main = interact.components[1].components[0].value;
                                     interact.guild.channels.create(`🟢 ${theme}`, {
@@ -1269,9 +1263,11 @@ bot.on('interactionCreate', async interact => {
                                             .then(([res]) => {
                                                 if (res.length != 0) {
                                                     res.forEach(item => {
-                                                        interact.guild.roles.fetch(item.role).then(role => {
-                                                            channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
-                                                        })
+                                                        if (interact.guild.roles.resolve(item.role) != null) {
+                                                            interact.guild.roles.fetch(item.role).then(role => {
+                                                                channel.permissionOverwrites.create(role, { "VIEW_CHANNEL": true });
+                                                            });
+                                                        }
                                                     });
                                                 }
                                             });
@@ -1280,8 +1276,8 @@ bot.on('interactionCreate', async interact => {
                                             content: lang[config.lang].modals.reportCreate.reportRun.cmd.replace("${channel}", channel)
                                         });
                                     });
-                                }
-                            })
+                                })
+                            }
                         }
                     })
                 break;
