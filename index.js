@@ -1110,7 +1110,7 @@ bot.on('interactionCreate', async interact => {
                 break;
             }
             case "undo": {
-                let target = interact.options.getMember("admin");
+                let target = interact.options.getMember("user");
                 pool.query("SELECT * FROM `bans` WHERE gived = ?", [target.id])
                     .then(([res]) => {
                         if (res.length != 0) {
@@ -1140,7 +1140,7 @@ bot.on('interactionCreate', async interact => {
                         }
                     })
                 interact.reply({
-                    content: "",
+                    content: lang.ru.interact.undo.replace("${target}", target),
                     ephemeral: true
                 });
                 break;
