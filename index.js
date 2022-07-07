@@ -1,6 +1,6 @@
 //Init block
 
-const { Client, Intents } = require("discord.js");
+const { Client, Intents, MessageButton, MessageActionRow } = require("discord.js");
 const { createPool } = require("mysql2");
 const config = require("./config.json");
 
@@ -31,6 +31,49 @@ const pool = createPool({
 
 bot.login(config.token);
 
+/**
+ * 
+ * @param {number} type Type of config
+ * @param {any} coef
+ */
+function configControl(type, coef) {
+    switch (type) {
+        case 0:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
+                .then(([res]) => {
+                    if (res.length != 0) return 0; else return 1;
+                });
+            break;
+        case 4:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
+                .then(([res]) => {
+                    if (res.length != 0) {
+                        if (coef.guild.channels.resolve(res[0].value) != null) {
+                            coef.guild.channels.fetch(res[0].value)
+                                .then(channel => {
+                                    console.log("member count update");
+                                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
+                                });
+                        }
+                    }
+                });
+            break;
+        case 6:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                .then(([res]) => {
+                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [coef.member.id])
+                        .then(([code]) => {
+                            if (res.length != 0 && code.length == 0) {
+                                let cod = gencode();
+                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
+                                coef.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
+                            }
+                        });
+                });
+            break;
+    }
+}
+
 bot.on('guildMemberAdd', member => {
     console.log(`${member.user.tag} join`);
     pool.query("SELECT * FROM `config` WHERE type = ?", [5])
@@ -44,33 +87,11 @@ bot.on('guildMemberAdd', member => {
                 }
             }
         });
-    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
-        .then(([res]) => {
-            if (res.length != 0) {
-                if (member.guild.channels.resolve(res[0].value) != null) {
-                    member.guild.channels.fetch(res[0].value)
-                        .then(channel => {
-                            console.log("member count update");
-                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
-                        })
-                }
-            }
-        })
+    configControl(4, member);
 });
 
 bot.on('guildMemberRemove', member => {
-    pool.query("SELECT * FROM `config` WHERE type = ?", [4])
-        .then(([res]) => {
-            if (res.length != 0) {
-                if (member.guild.channels.resolve(res[0].value) != null) {
-                    member.guild.channels.fetch(res[0].value)
-                        .then(channel => {
-                            console.log("member count update");
-                            channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
-                        })
-                }
-            }
-        })
+    configControl(4, member);
 });
 
 function gencode() {
@@ -81,6 +102,51 @@ function gencode() {
         code += ln[k];
     }
     return code;
+}
+
+/**
+ * 
+ * @param {string} customid id of button
+ * @param {any} label text on button
+ * @param {number} style style of button
+ * 0 - SUCCESS
+ * 1 - SECONDARY
+ * 2 - PRIMARY
+ * 3 - LINK
+ * 4 - DANGER
+ * @param {string} emoji
+ * @returns MessageActionRow with Button
+ */
+function button(customid, label, style, emoji) {
+    var stilek;
+    switch (style) {
+        case 0:
+            stilek = "SUCCESS";
+            break;
+        case 1:
+            stilek = "SECONDARY";
+            break;
+        case 2:
+            stilek = "PRIMARY";
+            break;
+        case 3:
+            stilek = "LINK";
+            break;
+        case 4:
+            stilek = "DANGER";
+            break;
+    }
+
+    return new MessageActionRow({
+        components: [
+            new MessageButton({
+                label: label,
+                style: stilek,
+                customId: customid,
+                emoji: emoji
+            })
+        ]
+    });
 }
 
 setInterval(() => {
@@ -157,346 +223,22 @@ bot.on("ready", () => {
     pool.query("SELECT * FROM `config` WHERE type = ?", [4])
         .then(([res]) => {
             if (res.length != 0) {
-                bot.guilds.fetch(config.guild).then(guild => {
-                    if (guild.channels.resolve(res[0].value) != null) {
-                        guild.channels.fetch(res[0].value)
-                            .then(channel => {
-                                console.log("member count update");
-                                channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", guild.memberCount));
-                            });
-                    }
-                });
+                if (bot.guilds.resolve(config.guild) != null) {
+                    bot.guilds.fetch(config.guild)
+                        .then(guild => {
+                            if (guild.channels.resolve(res[0].value) != null) {
+                                guild.channels.fetch(res[0].value)
+                                    .then(channel => {
+                                        console.log("member count update");
+                                        channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", guild.memberCount));
+                                    });
+                            }
+                        });
+                }
             }
         });
     console.log(`${bot.user.tag} runned!`);
-    bot.application.commands.set([
-        {
-            name: "mute",
-            description: lang[config.lang].cmds.mute.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    type: "USER",
-                    description: lang[config.lang].cmds.mute.user,
-                    required: true
-                },
-                {
-                    name: "time",
-                    type: "NUMBER",
-                    description: lang[config.lang].cmds.mute.time,
-                    required: true
-                },
-                {
-                    name: "reason",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.mute.reason,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "unmute",
-            description: lang[config.lang].cmds.unmute.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    type: "USER",
-                    description: lang[config.lang].cmds.unmute.user,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "warn",
-            description: lang[config.lang].cmds.warn.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    type: "USER",
-                    description: lang[config.lang].cmds.warn.user,
-                    required: true
-                },
-                {
-                    name: "reason",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.warn.reason,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "unwarn",
-            description: lang[config.lang].cmds.unwarn.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    type: "USER",
-                    description: lang[config.lang].cmds.unwarn.user,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "links",
-            description: lang[config.lang].cmds.links.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "add",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.links.add,
-                    required: false
-                },
-                {
-                    name: "remove",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.links.remove,
-                    required: false
-                }
-            ]
-        },
-        {
-            name: "words",
-            description: lang[config.lang].cmds.words.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "add",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.words.add,
-                    required: false
-                },
-                {
-                    name: "remove",
-                    type: "STRING",
-                    description: lang[config.lang].cmds.words.remove,
-                    required: false
-                }
-            ]
-        },
-        {
-            name: "report",
-            description: lang[config.lang].cmds.report.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "init",
-                    description: lang[config.lang].cmds.report.init,
-                    type: "SUB_COMMAND"
-                },
-                {
-                    name: "manage",
-                    description: lang[config.lang].cmds.report.manage,
-                    type: "SUB_COMMAND",
-                    options: [
-                        {
-                            name: "category",
-                            description: lang[config.lang].cmds.report.category,
-                            type: "CHANNEL",
-                            required: false,
-                            channel_types: [4],
-                        },
-                        {
-                            name: "add_manager",
-                            description: lang[config.lang].cmds.report.addManager,
-                            type: "ROLE",
-                            required: false
-                        },
-                        {
-                            name: "del_manager",
-                            description: lang[config.lang].cmds.report.delManager,
-                            type: "ROLE",
-                            required: false
-                        }
-                    ]
-                },
-                {
-                    name: "setsu",
-                    description: lang[config.lang].cmds.report.setsu,
-                    type: "SUB_COMMAND",
-                    options: [
-                        {
-                            name: "role",
-                            description: lang[config.lang].cmds.report.role,
-                            type: "ROLE",
-                            required: true
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            name: "logs",
-            description: lang[config.lang].cmds.logs.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "channels",
-                    description: lang[config.lang].cmds.logs.channels.cmd,
-                    type: "SUB_COMMAND",
-                    options: [
-                        {
-                            name: "admin",
-                            description: lang[config.lang].cmds.logs.channels.admin,
-                            type: "CHANNEL",
-                            required: false,
-                            channel_types: [0]
-                        },
-                        {
-                            name: "violation",
-                            description: lang[config.lang].cmds.logs.channels.violation,
-                            type: "CHANNEL",
-                            required: false,
-                            channel_types: [0]
-                        }
-                    ]
-                },
-                {
-                    name: "enabled",
-                    description: lang[config.lang].cmds.logs.enabled,
-                    type: "SUB_COMMAND"
-                }
-            ]
-        },
-        {
-            name: "memberc",
-            description: lang[config.lang].cmds.memberc.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "channel",
-                    description: lang[config.lang].cmds.memberc.channel,
-                    type: "CHANNEL",
-                    channel_types: [2],
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "grantrole",
-            description: lang[config.lang].cmds.grantrole.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "role",
-                    description: lang[config.lang].cmds.grantrole.role,
-                    type: "ROLE",
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "welcomerole",
-            description: lang[config.lang].cmds.welcomerole.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "role",
-                    description: lang[config.lang].cmds.welcomerole.role,
-                    type: "ROLE",
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "ban",
-            description: lang[config.lang].cmds.ban.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    description: lang[config.lang].cmds.ban.user,
-                    type: "USER",
-                    required: true
-                },
-                {
-                    name: "reason",
-                    description: lang[config.lang].cmds.ban.reason,
-                    type: "STRING",
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "unban",
-            description: lang[config.lang].cmds.unban.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    description: lang[config.lang].cmds.unban.user,
-                    type: "USER",
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "undo",
-            description: lang[config.lang].cmds.undo.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "user",
-                    description: lang[config.lang].cmds.undo.user,
-                    type: "USER",
-                    required: true
-                }
-            ]
-        },
-        {
-            name: "code",
-            description: lang[config.lang].cmds.code.cmd,
-            type: "CHAT_INPUT",
-            defaultPermission: false,
-            options: [
-                {
-                    name: "channel",
-                    description: lang[config.lang].cmds.code.channel.cmd,
-                    type: "SUB_COMMAND",
-                    options: [
-                        {
-                            name: "channel",
-                            description: lang[config.lang].cmds.code.channel.channel,
-                            type: "CHANNEL",
-                            required: true,
-                            channel_types: [0]
-                        }
-                    ]
-                },
-                {
-                    name: "activate",
-                    description: lang[config.lang].cmds.code.activate.cmd,
-                    type: "SUB_COMMAND",
-                    options: [
-                        {
-                            name: "code",
-                            description: lang[config.lang].cmds.code.activate.code,
-                            type: "STRING",
-                            required: true
-                        }
-                    ]
-                }
-            ]
-        }
-    ], config.guild)
+    bot.application.commands.set(require("./commands").commands, config.guild)
         .then((cmds) => {
             console.log(`${cmds.size} command loaded!`);
         });
@@ -512,20 +254,7 @@ bot.on('interactionCreate', async interact => {
                     console.log(`${interact.user.tag} use /report init`);
                     interact.reply({
                         content: lang[config.lang].interact.report.init.text,
-                        components: [
-                            {
-                                type: "ACTION_ROW",
-                                components: [
-                                    {
-                                        type: "BUTTON",
-                                        label: lang[config.lang].interact.report.init.button,
-                                        style: "SECONDARY",
-                                        customId: "reportCreate",
-                                        emoji: '💢'
-                                    }
-                                ],
-                            }
-                        ]
+                        components: [button("reportCreate", lang.ru.interact.report.init.button, 1, '💢')]
                     });
                 } else if (interact.options.getSubcommand() == "manage") {
                     console.log(`${interact.user.tag} use /report manage`);
@@ -534,11 +263,14 @@ bot.on('interactionCreate', async interact => {
                     let del = interact.options.getRole("del_manager");
                     var p1 = 0, p2 = 0, p3 = 0;
                     if (channel != null) {
-                        pool.query("SELECT * FROM `config` WHERE type = ?", [0])
-                            .then(([res]) => {
-                                if (res.length == 0) pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
-                                else pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
-                            });
+                        switch (configControl(0)) {
+                            case 1:
+                                pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [0, channel.id]);
+                                break;
+                            case 0:
+                                pool.query("UPDATE `config` SET value = ? WHERE type = ?", [channel.id, 0]);
+                                break;
+                        }
                         p1 = 1;
                     }
                     if (add != null) {
@@ -682,17 +414,7 @@ bot.on('interactionCreate', async interact => {
                                 });
                             }
                         } else {
-                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
-                                .then(([res]) => {
-                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
-                                        .then(([code]) => {
-                                            if (res.length != 0 && code.length == 0) {
-                                                let cod = gencode();
-                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
-                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
-                                            }
-                                        })
-                                })
+                            configControl(6, interact);
                             interact.reply({
                                 content: lang[config.lang].interact.mute.security,
                                 ephemeral: true
@@ -792,17 +514,7 @@ bot.on('interactionCreate', async interact => {
                                 });
                             pool.query("INSERT INTO `actions` (uuid, type, date) VALUES (?, ?, ?)", [interact.member.id, 1, new Date().valueOf()]);
                         } else {
-                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
-                                .then(([res]) => {
-                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
-                                        .then(([code]) => {
-                                            if (res.length != 0 && code.length == 0) {
-                                                let cod = gencode();
-                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
-                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
-                                            }
-                                        })
-                                })
+                            configControl(6, interact);
                             interact.reply({
                                 content: lang[config.lang].interact.warn.security,
                                 ephemeral: true
@@ -1065,21 +777,18 @@ bot.on('interactionCreate', async interact => {
                     pool.query("SELECT * FROM `config` WHERE type = ?", [1])
                         .then(([res]) => {
                             if (res.length != 0) {
-                                switch (res[0].value) {
-                                    case "1":
-                                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [false, 1]);
-                                        interact.reply({
-                                            content: lang[config.lang].interact.logs.disabled,
-                                            ephemeral: true
-                                        });
-                                        break;
-                                    case "0":
-                                        pool.query("UPDATE `config` SET value = ? WHERE type = ?", [true, 1]);
-                                        interact.reply({
-                                            content: lang[config.lang].interact.logs.enabled,
-                                            ephemeral: true
-                                        });
-                                        break;
+                                if (res[0].value == 1) {
+                                    pool.query("UPDATE `config` SET value = ? WHERE type = ?", [false, 1]);
+                                    interact.reply({
+                                        content: lang[config.lang].interact.logs.disabled,
+                                        ephemeral: true
+                                    });
+                                } else {
+                                    pool.query("UPDATE `config` SET value = ? WHERE type = ?", [true, 1]);
+                                    interact.reply({
+                                        content: lang[config.lang].interact.logs.enabled,
+                                        ephemeral: true
+                                    });
                                 }
                             } else {
                                 pool.query("INSERT INTO `config` (type, value) VALUES (?, ?)", [1, true]);
@@ -1088,7 +797,7 @@ bot.on('interactionCreate', async interact => {
                                     ephemeral: true
                                 });
                             }
-                        })
+                        });
                 }
                 break;
             }
@@ -1195,17 +904,7 @@ bot.on('interactionCreate', async interact => {
                                     }
                                 });
                         } else {
-                            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
-                                .then(([res]) => {
-                                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interact.member.id])
-                                        .then(([code]) => {
-                                            if (res.length != 0 && code.length == 0) {
-                                                let cod = gencode();
-                                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
-                                                interact.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
-                                            }
-                                        })
-                                })
+                            configControl(6, interact);
                             interact.reply({
                                 content: lang[config.lang].interact.ban.security,
                                 ephemeral: true
@@ -1391,18 +1090,7 @@ bot.on('interactionCreate', async interact => {
                     });
 
                 interact.update({
-                    components: [{
-                        type: "ACTION_ROW",
-                        components: [
-                            {
-                                label: lang[config.lang].modals.reportCreate.reportClose.deleteReport,
-                                type: "BUTTON",
-                                style: "DANGER",
-                                customId: "deleteReport",
-                                emoji: "♻"
-                            }
-                        ]
-                    }]
+                    components: [button("deleteReport", lang.ru.modals.reportCreate.reportClose.deleteReport, 4, '♻')]
                 });
                 break;
             }
@@ -1444,18 +1132,7 @@ bot.on('interactionCreate', async interact => {
                                                 description: main,
                                                 color: "#00FFC6"
                                             }],
-                                            components: [{
-                                                type: "ACTION_ROW",
-                                                components: [
-                                                    {
-                                                        label: lang[config.lang].modals.reportCreate.reportRun.closeReport,
-                                                        type: "BUTTON",
-                                                        style: "SECONDARY",
-                                                        customId: "closeReport",
-                                                        emoji: '❌'
-                                                    }
-                                                ]
-                                            }]
+                                            components: [button("closeReport", lang.ru.modals.reportCreate.reportRun.closeReport, 1, '❌')]
                                         });
 
                                         pool.query("SELECT * FROM `managers` WHERE type = ?", [0])
