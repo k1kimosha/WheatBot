@@ -31,49 +31,6 @@ const pool = createPool({
 
 bot.login(config.token);
 
-/**
- * 
- * @param {number} type Type of config
- * @param {any} coef
- */
-function configControl(type, coef) {
-    switch (type) {
-        case 0:
-            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
-                .then(([res]) => {
-                    if (res.length != 0) return 0; else return 1;
-                });
-            break;
-        case 4:
-            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
-                .then(([res]) => {
-                    if (res.length != 0) {
-                        if (coef.guild.channels.resolve(res[0].value) != null) {
-                            coef.guild.channels.fetch(res[0].value)
-                                .then(channel => {
-                                    console.log("member count update");
-                                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
-                                });
-                        }
-                    }
-                });
-            break;
-        case 6:
-            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
-                .then(([res]) => {
-                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [coef.member.id])
-                        .then(([code]) => {
-                            if (res.length != 0 && code.length == 0) {
-                                let cod = gencode();
-                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interact.member.id, cod]);
-                                coef.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
-                            }
-                        });
-                });
-            break;
-    }
-}
-
 bot.on('guildMemberAdd', member => {
     console.log(`${member.user.tag} join`);
     pool.query("SELECT * FROM `config` WHERE type = ?", [5])
@@ -94,6 +51,8 @@ bot.on('guildMemberRemove', member => {
     configControl(4, member);
 });
 
+//Optimisation block
+
 function gencode() {
     let ln = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     let code = '';
@@ -102,6 +61,49 @@ function gencode() {
         code += ln[k];
     }
     return code;
+}
+
+/**
+ * 
+ * @param {number} type Type of config
+ * @param {any} interaction Trigger of function
+ */
+ function configControl(type, interaction) {
+    switch (type) {
+        case 0:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
+                .then(([res]) => {
+                    if (res.length != 0) return 0; else return 1;
+                });
+            break;
+        case 4:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [type])
+                .then(([res]) => {
+                    if (res.length != 0) {
+                        if (interaction.guild.channels.resolve(res[0].value) != null) {
+                            interaction.guild.channels.fetch(res[0].value)
+                                .then(channel => {
+                                    console.log("member count update");
+                                    channel.setName(lang[config.lang].interact.memberc.channel.replace("${count}", member.guild.memberCount));
+                                });
+                        }
+                    }
+                });
+            break;
+        case 6:
+            pool.query("SELECT * FROM `config` WHERE type = ?", [6])
+                .then(([res]) => {
+                    pool.query("SELECT * FROM `codes` WHERE uuid = ?", [interaction.member.id])
+                        .then(([code]) => {
+                            if (res.length != 0 && code.length == 0) {
+                                let cod = gencode();
+                                pool.query("INSERT INTO `codes` (uuid, code) VALUES (?, ?)", [interaction.member.id, cod]);
+                                interaction.guild.channels.resolve(res[0].value).send(lang[config.lang].interact.code.lock.replace("${target}", interact.member).replace("${code}", cod));
+                            }
+                        });
+                });
+            break;
+    }
 }
 
 /**
