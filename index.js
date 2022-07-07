@@ -254,7 +254,7 @@ bot.on('interactionCreate', async interact => {
                     console.log(`${interact.user.tag} use /report init`);
                     interact.reply({
                         content: lang[config.lang].interact.report.init.text,
-                        components: [button("reportCreate", lang.ru.interact.report.init.button, 1, '💢')]
+                        components: [button("reportCreate", lang[config.lang].interact.report.init.button, 1, '💢')]
                     });
                 } else if (interact.options.getSubcommand() == "manage") {
                     console.log(`${interact.user.tag} use /report manage`);
@@ -399,8 +399,8 @@ bot.on('interactionCreate', async interact => {
                                                 if (item.type == 1 && item.value == 1) enabled = true;
                                                 if (item.type == 2) admin = item.value;
                                             });
-                                            if (enabled && admin != null) {
-                                                interact.guild.channels.cache.get(admin).send({
+                                            if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                                interact.guild.channels.resolve(admin).send({
                                                     content: lang[config.lang].interact.mute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${time}", time).replace("${reason}", reason),
                                                 });
                                             }
@@ -446,8 +446,8 @@ bot.on('interactionCreate', async interact => {
                                     if (item.type == 1 && item.value == 1) enabled = true;
                                     if (item.type == 2) admin = item.value;
                                 });
-                                if (enabled && admin != null) {
-                                    interact.guild.channels.cache.get(admin).send({
+                                if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                    interact.guild.channels.resolve(admin).send({
                                         content: lang[config.lang].interact.unmute.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
                                     });
                                 }
@@ -505,8 +505,8 @@ bot.on('interactionCreate', async interact => {
                                             if (item.type == 1 && item.value == 1) enabled = true;
                                             if (item.type == 2) admin = item.value;
                                         });
-                                        if (enabled && admin != null) {
-                                            interact.guild.channels.cache.get(admin).send({
+                                        if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                            interact.guild.channels.resolve(admin).send({
                                                 content: lang[config.lang].interact.warn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
                                             });
                                         }
@@ -543,8 +543,8 @@ bot.on('interactionCreate', async interact => {
                                             if (item.type == 1 && item.value == 1) enabled = true;
                                             if (item.type == 2) admin = item.value;
                                         });
-                                        if (enabled && admin != null) {
-                                            interact.guild.channels.cache.get(admin).send({
+                                        if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                            interact.guild.channels.resolve(admin).send({
                                                 content: lang[config.lang].interact.unwarn.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
                                             });
                                         }
@@ -589,8 +589,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.links.logs1.replace("${admin}", interact.member.displayName).replace("${link}", add)
                                         });
                                     }
@@ -611,8 +611,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.links.logs2.replace("${admin}", interact.member.displayName).replace("${link}", remove)
                                         });
                                     }
@@ -633,8 +633,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.links.logs3.replace("${admin}", interact.member.displayName).replace("${link1}", add).replace("${link2}", remove)
                                         });
                                     }
@@ -672,8 +672,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.words.logs1.replace("${admin}", interact.member.displayName).replace("${word}", add)
                                         });
                                     }
@@ -694,8 +694,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.words.logs2.replace("${admin}", interact.member.displayName).replace("${word}", remove)
                                         });
                                     }
@@ -716,8 +716,8 @@ bot.on('interactionCreate', async interact => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 2) admin = item.value;
                                     });
-                                    if (enabled && admin != null) {
-                                        interact.guild.channels.cache.get(admin).send({
+                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                        interact.guild.channels.resolve(admin).send({
                                             content: lang[config.lang].interact.words.logs3.replace("${admin}", interact.member.displayName).replace("${word1}", add).replace("${word2}", remove)
                                         });
                                     }
@@ -893,8 +893,8 @@ bot.on('interactionCreate', async interact => {
                                                         if (item.type == 1 && item.value == 1) enabled = true;
                                                         if (item.type == 2) admin = item.value;
                                                     });
-                                                    if (enabled && admin != null) {
-                                                        interact.guild.channels.cache.get(admin).send({
+                                                    if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                                        interact.guild.channels.resolve(admin).send({
                                                             content: lang[config.lang].interact.ban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName).replace("${reason}", reason),
                                                         });
                                                     }
@@ -934,8 +934,8 @@ bot.on('interactionCreate', async interact => {
                                             if (item.type == 1 && item.value == 1) enabled = true;
                                             if (item.type == 2) admin = item.value;
                                         });
-                                        if (enabled && admin != null) {
-                                            interact.guild.channels.cache.get(admin).send({
+                                        if (enabled && admin != null && interact.guild.channels.resolve(admin) != null) {
+                                            interact.guild.channels.resolve(admin).send({
                                                 content: lang[config.lang].interact.unban.logs.replace("${admin}", interact.member.displayName).replace("${target}", target.displayName),
                                             });
                                         }
@@ -1090,7 +1090,7 @@ bot.on('interactionCreate', async interact => {
                     });
 
                 interact.update({
-                    components: [button("deleteReport", lang.ru.modals.reportCreate.reportClose.deleteReport, 4, '♻')]
+                    components: [button("deleteReport", lang[config.lang].modals.reportCreate.reportClose.deleteReport, 4, '♻')]
                 });
                 break;
             }
@@ -1132,7 +1132,7 @@ bot.on('interactionCreate', async interact => {
                                                 description: main,
                                                 color: "#00FFC6"
                                             }],
-                                            components: [button("closeReport", lang.ru.modals.reportCreate.reportRun.closeReport, 1, '❌')]
+                                            components: [button("closeReport", lang[config.lang].modals.reportCreate.reportRun.closeReport, 1, '❌')]
                                         });
 
                                         pool.query("SELECT * FROM `managers` WHERE type = ?", [0])
@@ -1206,8 +1206,8 @@ bot.on('messageCreate', async msg => {
                                         if (item.type == 1 && item.value == 1) enabled = true;
                                         if (item.type == 3) violation = item.value;
                                     });
-                                    if (enabled && violation != null) {
-                                        msg.guild.channels.cache.get(violation).send({
+                                    if (enabled && violation != null && msg.guild.channels.resolve(violation) != null) {
+                                        msg.guild.channels.resolve(violation).send({
                                             content: lang[config.lang].msg_filter.logs_link.replace("${target}", target)
                                         });
                                     }
@@ -1260,8 +1260,8 @@ bot.on('messageCreate', async msg => {
                                             if (item.type == 1 && item.value == 1) enabled = true;
                                             if (item.type == 3) violation = item.value;
                                         });
-                                        if (enabled && violation != null) {
-                                            msg.guild.channels.cache.get(violation).send({
+                                        if (enabled && violation != null && msg.guild.channels.resolve(violation) != null) {
+                                            msg.guild.channels.resolve(violation).send({
                                                 content: lang[config.lang].msg_filter.logs_words.replace("${target}", target)
                                             });
                                         }
