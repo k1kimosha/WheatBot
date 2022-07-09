@@ -1171,8 +1171,8 @@ bot.on('messageCreate', async msg => {
         console.log(`${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} ${msg.author.tag}: ${msg.content}`);
         if (msg.content.search(/https*:\/\/[db][il1]sc[o0]r[db]\.g[il1][tf][ft]/g) != -1) {
             msg.delete();
-        } else if (msg.content.search(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g) != -1) {
-            let link = msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g)[0].split("/")[msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[a-z|0-9]{1,15}/g)[0].split("/").length - 1];
+        } else if (msg.content.search(/https*:\/\/discord.(gg\/|com\/invite\/)[A-z|0-9]{1,15}/g) != -1) {
+            let link = msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[A-z|0-9]{1,15}/g)[0].split("/")[msg.content.match(/https*:\/\/discord.(gg\/|com\/invite\/)[A-z|0-9]{1,15}/g)[0].split("/").length - 1];
             pool.query("SELECT * FROM `links` WHERE link = ?", [link])
                 .then(([res]) => {
                     if (res.length == 0) {
