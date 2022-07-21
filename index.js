@@ -7,7 +7,7 @@ const config = require("./config.json");
 var lang = {
     "en": require("./localization/en.json"),
     "ru": require("./localization/ru.json"),
-    "ua": require("./localization/ua.json")
+    "uK": require("./localization/uk.json")
 };
 
 const bot = new Client({
